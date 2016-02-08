@@ -7,5 +7,7 @@ I will be working on this in my spare time, with the goal of having v1.0 availab
 ## Purpose
 There are a number of software packages available to manage a curling club. I have not found one that truly meets the needs of my curling club, so I have set out to create one from scratch. The software will be provided for free in hopes that other clubs find it useful.
 
+I am also taking this opportunity to learn a few new technologies.
+
 ## Stack
 NodeJS, React, TypeScript. Other technologies to be determined.
