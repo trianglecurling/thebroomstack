@@ -1,0 +1,82 @@
+The Broom Stack
+
+Features
+- Membership
+-- Membership types
+--- Full
+--- Partial
+--- Student
+--- Family
+--- Reciprocal
+--- Novice
+---- Max one year membership
+
+-- Membership info
+--- Name, email, phone, address
+--- Picture (Facebook, Google integration)
+--- Years of experience
+--- Allergy info / dietary restrictions
+--- Preferred contact (email, phone, sms)
+--- Waiver status (photo?)
+--- Emergency contact name
+--- Emergency contact phone
+--- Emergency contact relationship
+-- Fully automated registration, payment
+--- Automatic team generation
+
+- Teams
+-- The system will keep track of all teams. A team can belong to any number of league seasons and spiels
+
+- Games
+-- Draws have many games. Games may also be orphaned, say, as pickups.
+
+- Leagues
+-- Leagues are usually on a particular night of the week. They have a certain set of rules (e.g. spinner, or mixed doubles).
+
+- Session
+-- A session logically contains all the draws for a league night, or a spiel (?)
+
+- Draw
+-- A draw is a set of games that all begin at a particular time. League sessions and spiels have many draws.
+
+- Season
+-- A season is a period of time in which many leagues have seasons
+
+- League Season
+-- A league season is a season for a single league. League seasons have a set of coordinators, a schedule (sessions, which specify draws, which have a date/time), a night of the week (opt), and teams
+
+
+- Reports
+-- Interesting statistics. Might be implemented on a case by case basis.
+
+Data model (not complete)
+
+Member (email, password, id, name, waiver signed date)
+Membership (member id, membership type, notes)
+MembershipType (enum - full, partial, student, family (owner), family (member), reciprocal (primary club), novice)
+Profile (address, profile picture, years experience, allergy info/dietary restrictions, preferred contact method, emergency contact info)
+
+League (title, rules)
+Draw (datetime, league, spiel, games, draw snacks)
+Session (Draws)
+Season (name, league seasons)
+League Season (league, coordinators, schedule, night of the week, teams)
+League type (enum) - open, spinner, competitive, instructional, team registration, doubles, mixed)
+Game (team1, team2, winner, team1 score, team2 score, datetime, league session)
+Team (team name, skip, vice, second, lead)
+
+LeagueRegistration (member, preferred position(s), pairing request, team members, unavailable dates, payment status)
+
+Sheets (name, status)
+
+Spiel (datetime start, datetime end)
+
+Event (datetime start, datetime end, title, cost, info)
+
+Payment (datetime, member, amount, medium)
+
+Payment Medium (name, info, URL) - PayPal, cash, check
+
+Spare Request (requesting member, accepting member, game, date requested, date accepted)
+
+Board member (title, date instated, term end date)
