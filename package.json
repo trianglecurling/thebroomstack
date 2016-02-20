@@ -1,0 +1,30 @@
+{
+  "name": "thebroomstack",
+  "version": "0.0.1",
+  "description": "The Broom Stack is software to manage a curling club, including a back end and web interface.",
+  "main": "index.js",
+  "dependencies": {
+    "browserify": "^13.0.0",
+    "koa": "^2.0.0-alpha.3",
+    "lodash": "^4.5.0"
+  },
+  "devDependencies": {
+    "typescript": "^1.8.0"
+  },
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/trevorsg/thebroomstack.git"
+  },
+  "keywords": [
+    "curling"
+  ],
+  "author": "Trevor Gau",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/trevorsg/thebroomstack/issues"
+  },
+  "homepage": "https://github.com/trevorsg/thebroomstack#readme"
+}
