@@ -1,14 +1,23 @@
 import koa = require("koa");
+import koaRouter = require("koa-router");
 
 const app = new koa();
+const router = new koaRouter();
+
+router.get("/hello", async (ctx, next) => {
+    await next();
+    ctx.body = "Waving hello.";
+});
+
+app.use((<any>router).routes());
 
 app.use(async (ctx, next) => {
-  try {
-    await next(); // next is now a function
-  } catch (err) {
-    ctx.body = { message: err.message };
-    ctx.status = err.status || 500;
-  }
+	try {
+		await next(); // next is now a function
+	} catch (err) {
+		ctx.body = { message: err.message };
+		ctx.status = err.status || 500;
+	}
 });
 
 app.use(async (ctx, next) => {

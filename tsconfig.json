@@ -1,15 +1,16 @@
 {
-    "compilerOptions": {
-        "module": "commonjs",
-        "noImplicitAny": true,
-        "removeComments": true,
-        "outDir": "build/Release/",
-        "sourceMap": true,
-        "target": "es6"
-    },
-    "files": [
-        "app.ts",
-        "typings/main.d.ts",
-        "typings/browser.d.ts"
-    ]
+	"compilerOptions": {
+		"module": "commonjs",
+		"noImplicitAny": true,
+		"removeComments": true,
+		"outDir": "build/Release/",
+		"sourceMap": true,
+		"target": "es6"
+	},
+	"files": [
+		"src/app.ts",
+		"src/schedule-scraper.ts",
+		"typings/main.d.ts"
+		/*"typings/browser.d.ts"*/
+	]
 }

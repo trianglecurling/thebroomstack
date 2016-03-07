@@ -5,9 +5,9 @@
 			"name": "Launch",
 			"type": "node",
 			"request": "launch",
-			"program": "${workspaceRoot}/app.ts",
+			"program": "${workspaceRoot}/src/schedule-scraper.ts",
 			"stopOnEntry": false,
-			"args": [],
+			"args": ["Trevor_Gau", "xyz", "--fiddler"],
 			"cwd": "${workspaceRoot}",
 			"runtimeExecutable": null,
 			"runtimeArgs": [
