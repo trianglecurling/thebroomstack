@@ -7,6 +7,7 @@ const router = new koaRouter();
 router.get("/hello", async (ctx, next) => {
     await next();
     ctx.body = "Waving hello.";
+
 });
 
 app.use((<any>router).routes());

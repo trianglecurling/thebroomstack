@@ -28,10 +28,28 @@ if (process.argv.indexOf("--fiddler") >= 0) {
 	process.env.HTTP_PROXY = "http://127.0.0.1:8888";
 }
 
-const site = "http://trianglecurling.com";
+interface Game {
+	time: Date;
+	sheet: string;
+	team1: Team | string;
+	team2: Team | string;
+}
 
+interface Team {
+	name: string;
+	lead: string;
+	second: string;
+	vice: string;
+	skip: string;
+}
+
+const site = "http://trianglecurling.com";
+const timeRE = /(\d\d?):(\d\d) ((?:P|A)M)/;
+const todaysGames: Game[] = [];
+
+console.log("Navigate to admin login screen...");
 request.get(`${site}/administrator`, {}, (error: any, response: http.IncomingMessage, body: any) => {
-	console.log("hello");
+	console.log("Logging in...");
 	const sessionCookie = parseCookie(response.headers["set-cookie"][0]);
 
 	// Parse the body
@@ -63,11 +81,50 @@ request.get(`${site}/administrator`, {}, (error: any, response: http.IncomingMes
 			headers: stdHeaders,
 			body: `username=${username}&passwd=${password}${formEncode}`
 		}, (error: any, response: http.IncomingMessage, body: any) => {
-			console.log("Logged in...");
+			console.log("Logged in. Redirecting...");
 
 			// Now a GET request to the Location header.
 			request.get(response.headers["location"], { headers: stdHeaders }, (error: any, response: http.IncomingMessage, body: any) => {
-				// Now a GET request to the schedule page.
+				console.log("Navigating to curling manager main page...")
+
+				// Get the main page, which has Today's Scheduled Games
+				request.get(`${site}/administrator/index.php?option=com_curling`, {headers: stdHeaders}, (error: any, response: http.IncomingMessage, body: any) => {
+					console.log("Scraping game data...");
+
+					jsdom.env(body, ["http://code.jquery.com/jquery.min.js"], (errors: Error[], window: any) => {
+						const $ = window.$;
+						const $table = $("table.table-striped");
+						const $rows = $table.find("tbody tr");
+						$rows.each((index: number, row: any) => {
+							const $row = $(row);
+							let $timeCell = $row.find("td").eq(0);
+							const timeColSpan = $timeCell.attr("colspan");
+							if (timeColSpan && timeColSpan > 1) {
+								return true; // continue;
+							}
+
+							const time = $timeCell.text();
+							const [fullTime, hour, minute, meridian] = timeRE.exec(time);
+							const curDate = new Date();
+							const dateTime = new Date(curDate.getFullYear(), curDate.getMonth(), curDate.getDate(), parseInt(hour, 10), parseInt(minute, 10));
+							const sheet: string = $row.find("td").eq(1).text().trim();
+							if (["A", "B", "C", "D"].indexOf(sheet) === -1) {
+								return true; // continue
+							}
+							const teams = $row.find("td").eq(2).text().trim();
+							const [team1, team2] = teams.split("vs").map((t: string) => t.trim());
+							todaysGames.push({
+								time: dateTime,
+								sheet: sheet,
+								team1: team1,
+								team2: team2
+							});
+						});
+						console.log("Today's games: ");
+						console.log(JSON.stringify(todaysGames, null, 4));
+					});
+
+				});
 			});
 		});
 	});
