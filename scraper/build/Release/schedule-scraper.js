@@ -67,7 +67,7 @@ request.get(site + "/administrator", {}, function (error, response, body) {
                             var time = $timeCell.text();
                             var _a = timeRE.exec(time), fullTime = _a[0], hour = _a[1], minute = _a[2], meridian = _a[3];
                             var curDate = new Date();
-                            var dateTime = new Date(curDate.getFullYear(), curDate.getMonth(), curDate.getDate(), parseInt(hour, 10), parseInt(minute, 10));
+                            var dateTime = new Date(curDate.getFullYear(), curDate.getMonth(), curDate.getDate(), parseInt(hour, 10) % 12 + (meridian === "PM" ? 12 : 0), parseInt(minute, 10));
                             var sheet = $row.find("td").eq(1).text().trim();
                             if (["A", "B", "C", "D"].indexOf(sheet) === -1) {
                                 return true;

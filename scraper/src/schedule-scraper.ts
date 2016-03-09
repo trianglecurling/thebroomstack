@@ -106,7 +106,7 @@ request.get(`${site}/administrator`, {}, (error: any, response: http.IncomingMes
 							const time = $timeCell.text();
 							const [fullTime, hour, minute, meridian] = timeRE.exec(time);
 							const curDate = new Date();
-							const dateTime = new Date(curDate.getFullYear(), curDate.getMonth(), curDate.getDate(), parseInt(hour, 10), parseInt(minute, 10));
+							const dateTime = new Date(curDate.getFullYear(), curDate.getMonth(), curDate.getDate(), parseInt(hour, 10) % 12 + (meridian === "PM" ? 12 : 0), parseInt(minute, 10));
 							const sheet: string = $row.find("td").eq(1).text().trim();
 							if (["A", "B", "C", "D"].indexOf(sheet) === -1) {
 								return true; // continue
