@@ -1,3 +1,4 @@
+#!/bin/env node
 "use strict";
 var jsdom = require("jsdom");
 var request = require("request");
