@@ -1,6 +1,8 @@
 import jsdom = require("jsdom");
 import request = require("request");
 import http = require("http");
+import Q = require("q");
+import _ = require("lodash");
 
 interface Cookie {
 	key: string;
@@ -31,12 +33,19 @@ if (process.argv.indexOf("--fiddler") >= 0) {
 interface Game {
 	time: Date;
 	sheet: string;
+	league: string;
 	team1: Team | string;
 	team2: Team | string;
 }
 
+interface TeamRef {
+	skip: string;
+	league: string;
+}
+
 interface Team {
 	name: string;
+	league: string;
 	lead: string;
 	second: string;
 	vice: string;
@@ -103,11 +112,13 @@ request.get(`${site}/administrator`, {}, (error: any, response: http.IncomingMes
 							console.log("There are no ice bookings in the schedule for today.");
 						} else {
 							const $rows = $table.find("tbody tr");
+							let currentLeague = "";
 							$rows.each((index: number, row: any) => {
 								const $row = $(row);
 								let $timeCell = $row.find("td").eq(0);
 								const timeColSpan = $timeCell.attr("colspan");
 								if (timeColSpan && timeColSpan > 1) {
+									currentLeague = $timeCell.text().trim();
 									return true; // continue;
 								}
 
@@ -123,6 +134,7 @@ request.get(`${site}/administrator`, {}, (error: any, response: http.IncomingMes
 								const [team1, team2] = teams.split("vs").map((t: string) => t.trim());
 								todaysGames.push({
 									time: dateTime,
+									league: currentLeague,
 									sheet: sheet,
 									team1: team1,
 									team2: team2
@@ -130,13 +142,13 @@ request.get(`${site}/administrator`, {}, (error: any, response: http.IncomingMes
 							});
 
 							if (!skipRosters) {
-								const teamsToFetch = _.uniq(todaysGames.map(g => g.team1 as string).concat(todaysGames.map(g => g.team2 as string)));
-								console.log(`Finished games. Now fetching teams rosters for ${teamsToFetch.join("; ")}...`);
+								const teamsToFetch: TeamRef[] = todaysGames.map(g => ({skip: g.team1 as string, league: g.league})).concat(todaysGames.map(g => ({skip: g.team2 as string, league: g.league})));
+								console.log(`Finished games. Now fetching teams rosters for ${teamsToFetch.map(t => t.skip).join("; ")}...`);
 								const teamScraper = new TeamScraper(stdHeaders);
-								teamScraper.getTeams(getNextLeague().name, teamsToFetch).then((teams) => {
+								teamScraper.getTeams(teamsToFetch).then((teams) => {
 									for (const game of todaysGames) {
-										game.team1 = teams[game.team1 as string];
-										game.team2 = teams[game.team2 as string];
+										game.team1 = teams[game.team1 as string + "|" + game.league];
+										game.team2 = teams[game.team2 as string + "|" + game.league];
 									}
 									console.log("Today's games: ");
 									console.log(JSON.stringify(todaysGames, null, 4));
@@ -201,8 +213,8 @@ const leagues: League[] = [
 
 function getNextLeague(from: Date = null): League {
 	if (!from) {
-		// 3 hours in the future.
-		const now = new Date(new Date().getTime() + 180 * 60 * 1000);
+		// 3 hours in the past.
+		const now = new Date(new Date().getTime() - 180 * 60 * 1000);
 		return getNextLeague(now);
 	}
 
@@ -222,57 +234,78 @@ function getNextLeague(from: Date = null): League {
 }
 
 class TeamScraper {
-	private leagueIds: {[league: string]: number} = {};
+	private leagueIds: {[league: string]: number} = null;
 
 	constructor(private headers: any) { }
 
-	public getTeams(leagueName: string, skips: string[]): Q.Promise<{[skip: string]: Team}> {
+	public getTeams(teams: TeamRef[]): Q.Promise<{[skip: string]: Team}> {
+		const leagues = _.uniq(teams.map(t => t.league));
+
 		return this.ensureTeamIds().then(() => {
-			return Q.Promise<{[skip: string]: Team}>((resolve, reject) => {
-				console.log(`Navigating to teams page for league ${leagueName}...`);
-				request.get(`${site}/administrator/index.php?task=teams&option=com_curling&league_id=${this.leagueIds[leagueName]}`, {headers: this.headers}, (error: any, response: http.IncomingMessage, body: any) => {
-					jsdom.env(body, ["http://code.jquery.com/jquery.min.js"], (errors: Error[], window: any) => {
-						const $ = window.$;
-						const $rows = $("table.table-striped tbody tr");
-						const teamPromises: Q.Promise<Team>[] = [];
-						for (const skip of skips) {
-							$rows.each((index: number, row: Element) => {
-								const $cells = $(row).find("td");
-								const teamSkip = $cells.eq(3).text().trim();
-								if (teamSkip === skip) {
-									const url = $cells.eq(3).find("a")[0].href;
-									const teamPromise = this.getTeam(url);
-									teamPromises.push(teamPromise);
+			return Q.Promise<{[skip: string]: Team}>((outerResolve, reject) => {
+				const leaguePromises: Q.Promise<{[skip: string]: Team}>[] = [];
+				for (const leagueName of leagues) {
+					const leaguePromise = Q.Promise<{[skip: string]: Team}>((resolve, reject) => {
+						console.log(`Navigating to teams page for league ${leagueName}...`);
+						request.get(`${site}/administrator/index.php?task=teams&option=com_curling&league_id=${this.leagueIds[leagueName]}`, {headers: this.headers}, (error: any, response: http.IncomingMessage, body: any) => {
+							jsdom.env(body, ["http://code.jquery.com/jquery.min.js"], (errors: Error[], window: any) => {
+								const $ = window.$;
+								const $rows = $("table.table-striped tbody tr");
+								const teamPromises: Q.Promise<Team>[] = [];
+								for (const skip of teams.filter(t => t.league === leagueName).map(t => t.skip)) {
+									$rows.each((index: number, row: Element) => {
+										const $cells = $(row).find("td");
+										const teamSkip = $cells.eq(3).text().trim();
+										if (teamSkip === skip) {
+											const url = `${site}/administrator/${$cells.eq(3).find("a")[0].href}`;
+											const teamPromise = this.getTeam(url, leagueName);
+											teamPromises.push(teamPromise);
+										}
+									});
 								}
+								return Q.all(teamPromises).then((teams) => {
+									console.log(`All teams discovered for league ${leagueName}.`);
+									const teamsObj: {[skip: string]: Team} = {};
+									for (const team of teams) {
+										teamsObj[team.skip] = team;
+									}
+									resolve(teamsObj);
+								});
 							});
-						}
-						return Q.all(teamPromises).then((teams) => {
-							console.log("All teams discovered");
-							const teamsObj: {[skip: string]: Team} = {};
-							for (const team of teams) {
-								teamsObj[team.skip] = team;
-							}
-							resolve(teamsObj);
 						});
 					});
+					leaguePromises.push(leaguePromise);
+				}
+				Q.all(leaguePromises).then((foundTeams) => {
+					const result: {[leagueSkip: string]: Team} = {};
+					for (const teams of foundTeams) {
+						Object.keys(teams).forEach(skip => {
+							result[skip + "|" + teams[skip].league] = teams[skip];
+						});
+					}
+					outerResolve(result);
 				});
 			});
 		});
 	}
 
-	private getTeam(url: string): Q.Promise<Team> {
+	private getTeam(url: string, league: string): Q.Promise<Team> {
 		return Q.Promise<Team>((resolve, reject) => {
 			console.log("Getting requested team...");
 			request.get(url, {headers: this.headers}, (error: any, response: http.IncomingMessage, body: any) => {
 				jsdom.env(body, ["http://code.jquery.com/jquery.min.js"], (errors: Error[], window: any) => {
 					const $ = window.$;
 					const name = $("input[name=team_name]").val();
-					const skip = $(`option[value=${ $("select").eq(1).val() }]`).eq(0).text();
-					const vice = $(`option[value=${ $("select").eq(2).val() }]`).eq(0).text();
-					const second = $(`option[value=${ $("select").eq(3).val() }]`).eq(0).text();
-					const lead = $(`option[value=${ $("select").eq(4).val() }]`).eq(0).text();
+					const s1val = $("select").eq(1).val();
+					const s2val = $("select").eq(2).val();
+					const s3val = $("select").eq(3).val();
+					const s4val = $("select").eq(4).val();
+					const skip = s1val === "0" ? null : $(`option[value=${ s1val }]`).eq(0).text();
+					const vice = s2val === "0" ? null : $(`option[value=${ s2val }]`).eq(0).text();
+					const second = s3val === "0" ? null : $(`option[value=${ s3val }]`).eq(0).text();
+					const lead = s4val === "0" ? null : $(`option[value=${ s4val }]`).eq(0).text();
 					console.log(`Found team ${name}`);
-					resolve({name: name, lead: lead, second: second, vice: vice, skip: skip});
+					resolve({name: name, lead: lead, second: second, vice: vice, skip: skip, league: league});
 				});
 			});
 		});
@@ -283,13 +316,18 @@ class TeamScraper {
 			return Q.resolve<void>(null);
 		}
 		console.log("Discovering internal team ids...");
+		this.leagueIds = {};
 		return Q.Promise<void>((resolve, reject) => {
 			request.get(`${site}/administrator/index.php?task=teams&option=com_curling`, {headers: this.headers}, (error: any, response: http.IncomingMessage, body: any) => {
 				jsdom.env(body, ["http://code.jquery.com/jquery.min.js"], (errors: Error[], window: any) => {
 					const $ = window.$;
 					const $options = $("select[name=league_id] option");
 					$options.each((index: number, element: Element) => {
-						this.leagueIds[$(element).text()] = parseInt($(element).attr("value"), 10);
+						const optionVal = $(element).attr("value");
+						if (optionVal === "0") {
+							return true; // continue;
+						}
+						this.leagueIds[$(element).text()] = parseInt(optionVal, 10);
 					});
 					console.log("Team ids found.");
 					resolve(null);

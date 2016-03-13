@@ -1,6 +1,8 @@
 "use strict";
 var jsdom = require("jsdom");
 var request = require("request");
+var Q = require("q");
+var _ = require("lodash");
 function parseCookie(cookie) {
     var pieces = cookie.split(";").map(function (p) { return p.trim(); });
     var keyval = pieces[0].split("=");
@@ -65,11 +67,13 @@ request.get(site + "/administrator", {}, function (error, response, body) {
                         }
                         else {
                             var $rows = $table.find("tbody tr");
+                            var currentLeague_1 = "";
                             $rows.each(function (index, row) {
                                 var $row = $(row);
                                 var $timeCell = $row.find("td").eq(0);
                                 var timeColSpan = $timeCell.attr("colspan");
                                 if (timeColSpan && timeColSpan > 1) {
+                                    currentLeague_1 = $timeCell.text().trim();
                                     return true;
                                 }
                                 var time = $timeCell.text();
@@ -84,20 +88,21 @@ request.get(site + "/administrator", {}, function (error, response, body) {
                                 var _b = teams.split("vs").map(function (t) { return t.trim(); }), team1 = _b[0], team2 = _b[1];
                                 todaysGames.push({
                                     time: dateTime,
+                                    league: currentLeague_1,
                                     sheet: sheet,
                                     team1: team1,
                                     team2: team2
                                 });
                             });
                             if (!skipRosters) {
-                                var teamsToFetch = _.uniq(todaysGames.map(function (g) { return g.team1; }).concat(todaysGames.map(function (g) { return g.team2; })));
-                                console.log("Finished games. Now fetching teams rosters for " + teamsToFetch.join("; ") + "...");
+                                var teamsToFetch = todaysGames.map(function (g) { return ({ skip: g.team1, league: g.league }); }).concat(todaysGames.map(function (g) { return ({ skip: g.team2, league: g.league }); }));
+                                console.log("Finished games. Now fetching teams rosters for " + teamsToFetch.map(function (t) { return t.skip; }).join("; ") + "...");
                                 var teamScraper = new TeamScraper(stdHeaders);
-                                teamScraper.getTeams(getNextLeague().name, teamsToFetch).then(function (teams) {
+                                teamScraper.getTeams(teamsToFetch).then(function (teams) {
                                     for (var _i = 0, todaysGames_1 = todaysGames; _i < todaysGames_1.length; _i++) {
                                         var game = todaysGames_1[_i];
-                                        game.team1 = teams[game.team1];
-                                        game.team2 = teams[game.team2];
+                                        game.team1 = teams[game.team1 + "|" + game.league];
+                                        game.team2 = teams[game.team2 + "|" + game.league];
                                     }
                                     console.log("Today's games: ");
                                     console.log(JSON.stringify(todaysGames, null, 4));
@@ -155,7 +160,7 @@ var leagues = [
 function getNextLeague(from) {
     if (from === void 0) { from = null; }
     if (!from) {
-        var now = new Date(new Date().getTime() + 180 * 60 * 1000);
+        var now = new Date(new Date().getTime() - 180 * 60 * 1000);
         return getNextLeague(now);
     }
     var current = from;
@@ -175,48 +180,72 @@ function getNextLeague(from) {
 var TeamScraper = (function () {
     function TeamScraper(headers) {
         this.headers = headers;
-        this.leagueIds = {};
+        this.leagueIds = null;
     }
-    TeamScraper.prototype.getTeams = function (leagueName, skips) {
+    TeamScraper.prototype.getTeams = function (teams) {
         var _this = this;
+        var leagues = _.uniq(teams.map(function (t) { return t.league; }));
         return this.ensureTeamIds().then(function () {
-            return Q.Promise(function (resolve, reject) {
-                console.log("Navigating to teams page for league " + leagueName + "...");
-                request.get(site + "/administrator/index.php?task=teams&option=com_curling&league_id=" + _this.leagueIds[leagueName], { headers: _this.headers }, function (error, response, body) {
-                    jsdom.env(body, ["http://code.jquery.com/jquery.min.js"], function (errors, window) {
-                        var $ = window.$;
-                        var $rows = $("table.table-striped tbody tr");
-                        var teamPromises = [];
-                        var _loop_1 = function(skip) {
-                            $rows.each(function (index, row) {
-                                var $cells = $(row).find("td");
-                                var teamSkip = $cells.eq(3).text().trim();
-                                if (teamSkip === skip) {
-                                    var url = $cells.eq(3).find("a")[0].href;
-                                    var teamPromise = _this.getTeam(url);
-                                    teamPromises.push(teamPromise);
+            return Q.Promise(function (outerResolve, reject) {
+                var leaguePromises = [];
+                var _loop_1 = function(leagueName) {
+                    var leaguePromise = Q.Promise(function (resolve, reject) {
+                        console.log("Navigating to teams page for league " + leagueName + "...");
+                        request.get(site + "/administrator/index.php?task=teams&option=com_curling&league_id=" + _this.leagueIds[leagueName], { headers: _this.headers }, function (error, response, body) {
+                            jsdom.env(body, ["http://code.jquery.com/jquery.min.js"], function (errors, window) {
+                                var $ = window.$;
+                                var $rows = $("table.table-striped tbody tr");
+                                var teamPromises = [];
+                                var _loop_2 = function(skip) {
+                                    $rows.each(function (index, row) {
+                                        var $cells = $(row).find("td");
+                                        var teamSkip = $cells.eq(3).text().trim();
+                                        if (teamSkip === skip) {
+                                            var url = site + "/administrator/" + $cells.eq(3).find("a")[0].href;
+                                            var teamPromise = _this.getTeam(url, leagueName);
+                                            teamPromises.push(teamPromise);
+                                        }
+                                    });
+                                };
+                                for (var _i = 0, _a = teams.filter(function (t) { return t.league === leagueName; }).map(function (t) { return t.skip; }); _i < _a.length; _i++) {
+                                    var skip = _a[_i];
+                                    _loop_2(skip);
                                 }
+                                return Q.all(teamPromises).then(function (teams) {
+                                    console.log("All teams discovered for league " + leagueName + ".");
+                                    var teamsObj = {};
+                                    for (var _i = 0, teams_1 = teams; _i < teams_1.length; _i++) {
+                                        var team = teams_1[_i];
+                                        teamsObj[team.skip] = team;
+                                    }
+                                    resolve(teamsObj);
+                                });
                             });
-                        };
-                        for (var _i = 0, skips_1 = skips; _i < skips_1.length; _i++) {
-                            var skip = skips_1[_i];
-                            _loop_1(skip);
-                        }
-                        return Q.all(teamPromises).then(function (teams) {
-                            console.log("All teams discovered");
-                            var teamsObj = {};
-                            for (var _i = 0, teams_1 = teams; _i < teams_1.length; _i++) {
-                                var team = teams_1[_i];
-                                teamsObj[team.skip] = team;
-                            }
-                            resolve(teamsObj);
                         });
                     });
+                    leaguePromises.push(leaguePromise);
+                };
+                for (var _i = 0, leagues_2 = leagues; _i < leagues_2.length; _i++) {
+                    var leagueName = leagues_2[_i];
+                    _loop_1(leagueName);
+                }
+                Q.all(leaguePromises).then(function (foundTeams) {
+                    var result = {};
+                    var _loop_3 = function(teams_2) {
+                        Object.keys(teams_2).forEach(function (skip) {
+                            result[skip + "|" + teams_2[skip].league] = teams_2[skip];
+                        });
+                    };
+                    for (var _i = 0, foundTeams_1 = foundTeams; _i < foundTeams_1.length; _i++) {
+                        var teams_2 = foundTeams_1[_i];
+                        _loop_3(teams_2);
+                    }
+                    outerResolve(result);
                 });
             });
         });
     };
-    TeamScraper.prototype.getTeam = function (url) {
+    TeamScraper.prototype.getTeam = function (url, league) {
         var _this = this;
         return Q.Promise(function (resolve, reject) {
             console.log("Getting requested team...");
@@ -224,12 +253,16 @@ var TeamScraper = (function () {
                 jsdom.env(body, ["http://code.jquery.com/jquery.min.js"], function (errors, window) {
                     var $ = window.$;
                     var name = $("input[name=team_name]").val();
-                    var skip = $("option[value=" + $("select").eq(1).val() + "]").eq(0).text();
-                    var vice = $("option[value=" + $("select").eq(2).val() + "]").eq(0).text();
-                    var second = $("option[value=" + $("select").eq(3).val() + "]").eq(0).text();
-                    var lead = $("option[value=" + $("select").eq(4).val() + "]").eq(0).text();
+                    var s1val = $("select").eq(1).val();
+                    var s2val = $("select").eq(2).val();
+                    var s3val = $("select").eq(3).val();
+                    var s4val = $("select").eq(4).val();
+                    var skip = s1val === "0" ? null : $("option[value=" + s1val + "]").eq(0).text();
+                    var vice = s2val === "0" ? null : $("option[value=" + s2val + "]").eq(0).text();
+                    var second = s3val === "0" ? null : $("option[value=" + s3val + "]").eq(0).text();
+                    var lead = s4val === "0" ? null : $("option[value=" + s4val + "]").eq(0).text();
                     console.log("Found team " + name);
-                    resolve({ name: name, lead: lead, second: second, vice: vice, skip: skip });
+                    resolve({ name: name, lead: lead, second: second, vice: vice, skip: skip, league: league });
                 });
             });
         });
@@ -240,13 +273,18 @@ var TeamScraper = (function () {
             return Q.resolve(null);
         }
         console.log("Discovering internal team ids...");
+        this.leagueIds = {};
         return Q.Promise(function (resolve, reject) {
             request.get(site + "/administrator/index.php?task=teams&option=com_curling", { headers: _this.headers }, function (error, response, body) {
                 jsdom.env(body, ["http://code.jquery.com/jquery.min.js"], function (errors, window) {
                     var $ = window.$;
                     var $options = $("select[name=league_id] option");
                     $options.each(function (index, element) {
-                        _this.leagueIds[$(element).text()] = parseInt($(element).attr("value"), 10);
+                        var optionVal = $(element).attr("value");
+                        if (optionVal === "0") {
+                            return true;
+                        }
+                        _this.leagueIds[$(element).text()] = parseInt(optionVal, 10);
                     });
                     console.log("Team ids found.");
                     resolve(null);
