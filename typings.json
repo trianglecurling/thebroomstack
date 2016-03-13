@@ -4,7 +4,9 @@
     "jquery": "github:DefinitelyTyped/DefinitelyTyped/jquery/jquery.d.ts#470954c4f427e0805a2d633636a7c6aa7170def8",
     "jsdom": "github:DefinitelyTyped/DefinitelyTyped/jsdom/jsdom.d.ts#ffad52fa9cfba2ab1a08da7fecbb944264184d91",
     "koa": "github:DefinitelyTyped/DefinitelyTyped/koa/koa.d.ts#3d7909ee394891b4f6ca5a0b2a556c60924b6bf1",
+    "lodash": "github:DefinitelyTyped/DefinitelyTyped/lodash/lodash-3.10.d.ts#3d572e1ee3e6492983ef01f8b7adf6150d345b11",
     "node": "github:DefinitelyTyped/DefinitelyTyped/node/node.d.ts#aee0039a2d6686ec78352125010ebb38a7a7d743",
+    "q": "registry:dt/q#0.0.0+20160215162030",
     "react": "github:DefinitelyTyped/DefinitelyTyped/react/react.d.ts#f407264835650f5f38d4bb2c515a79e7a835916b",
     "request": "github:DefinitelyTyped/DefinitelyTyped/request/request.d.ts#abc2bcfb8524b1e027e6298d3348012b5b06eda5"
   },

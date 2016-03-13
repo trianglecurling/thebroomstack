@@ -8,7 +8,8 @@
     "jsdom": "^8.1.0",
     "koa": "^2.0.0-alpha.3",
     "koa-router": "^7.0.1",
-    "lodash": "^4.5.0",
+    "lodash": "^4.6.1",
+    "q": "^1.4.1",
     "request": "^2.69.0"
   },
   "devDependencies": {
@@ -17,7 +18,7 @@
   "scripts": {
     "test": "mocha"
   },
-  "repository": {
+  "repository": {\
     "type": "git",
     "url": "git+https://github.com/trevorsg/thebroomstack.git"
   },
