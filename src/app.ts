@@ -1,74 +1,91 @@
-import koa = require("koa");
 import bodyParser = require("koa-bodyparser");
-import koaRouter = require("koa-router");
+import bootstrap = require("./bootstrap");
 import guid = require("guid");
+import jwt = require("jsonwebtoken");
+import koa = require("koa");
+import koaRouter = require("koa-router");
+import tokenValidator = require("./tokenvalidator");
+import Q = require("q");
 
 var mssql = require("mssql");
 
-const app = new koa();
-const router = new koaRouter();
+class TheBroomStack {
+	private _publicKey: string;
+	private _privateKey: string;
+	private _koaApp: koa;
+	private _router: koaRouter;
 
-router.get("/hello", async (ctx, next) => {
-	await next();
-	ctx.body = "Waving hello.";
-});
+	private authenticate: (ctx: koa.Context, next: Function) => void;
 
-router.post("/person", async(ctx, next) => {
-	if (ctx.request.body.displayname) {
-		const connection = await mssql.connect("mssql://thebroomstack:quadtakeout@localhost/thebroomstack");
-		const request = new mssql.Request();
-		await request
-			.input("displayname", ctx.request.body.displayname)
-			.input("firstname", ctx.request.body.firstname)
-			.input("lastname", ctx.request.body.lastname)
-			.output("id")
-			.execute("prc_AddPerson")
+	constructor() {
 
-		console.log("Added person: " + request.parameters.id.value);
-		ctx.response.body = `Hello, ${request.parameters.id.value}!`;
-	} else {
-		throw new Error("A person requires a display name.");
 	}
-});
 
-router.get("/write", async (ctx, next) => {
-	await next();
-	const connection = mssql.connect("mssql://thebroomstack:quadtakeout@localhost/thebroomstack").then(() => {
-		new mssql.Request().query(`insert into [thebroomstack].[dbo].[tbl_teamtype] (id, name) values ('${guid.raw()}', 'Magic')`);
-	}).catch((error: any) => {
-		console.log(error);
-	});
-	ctx.body = "Inserted new row.";
-});
-
-app.use(bodyParser());
-
-app.use((<any>router).routes());
-
-app.use(async (ctx, next) => {
-	try {
-		await next(); // next is now a function
-	} catch (err) {
-		ctx.body = { message: err.message };
-		ctx.status = err.status || 500;
+	public get publicKey() {
+		return this._publicKey;
 	}
-});
 
-app.use(async (ctx, next) => {
-	const before = new Date();
-	await next();
-	const after = new Date();
-	ctx.body += " Response time = " + (after.getTime() - before.getTime());
-});
+	public get privateKey() {
+		return this._privateKey;
+	}
 
-app.use(async (ctx) => {
-	ctx.body = "Hello, World!";
-	return new Promise<void>((resolve) => {
-		setTimeout(() => {
-			console.log("foo");
-			resolve();
-		}, 1000);
-	});
-});
+	public get koa() {
+		return this._koaApp;
+	}
 
-app.listen(3000);
+	public get router() {
+		return this._router;
+	}
+
+	public async init() {
+		const keys = await bootstrap.init();
+
+		({ public: this._publicKey, private: this._privateKey } = keys);
+		this._koaApp = new koa();
+		this._router = new koaRouter();
+		this.authenticate = tokenValidator(this.publicKey);
+		this.setupRoutes();
+		this.setupMiddleware();
+	}
+
+	private setupMiddleware() {
+		this.koa.use(bodyParser());
+		this.koa.use((<any>this.router).routes());
+	}
+
+	private setupRoutes() {
+
+		this.router.get("/login", async (ctx, next) => {
+			const token = jwt.sign({user: "trevorsg"}, this._privateKey, { algorithm: "RS256" });
+			ctx.body = token;
+		});
+
+		this.router.get("/hello", this.authenticate, async (ctx, next) => {
+			await next();
+			ctx.body = "Waving hello.";
+		});
+
+		this.router.post("/person", async(ctx, next) => {
+			if (ctx.request.body.displayname) {
+				const connection = await mssql.connect("mssql://thebroomstack:quadtakeout@localhost/thebroomstack");
+				const request = new mssql.Request();
+				await request
+					.input("displayname", ctx.request.body.displayname)
+					.input("firstname", ctx.request.body.firstname)
+					.input("lastname", ctx.request.body.lastname)
+					.output("id")
+					.execute("prc_AddPerson")
+
+				console.log("Added person: " + request.parameters.id.value);
+				ctx.response.body = `Hello, ${request.parameters.id.value}!`;
+			} else {
+				throw new Error("A person requires a display name.");
+			}
+		});
+	}
+}
+
+const app = new TheBroomStack();
+app.init().then(() => {
+	app.koa.listen(3000);
+});

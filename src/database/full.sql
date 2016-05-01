@@ -1,6 +1,6 @@
 USE [master]
 GO
-/****** Object:  Database [thebroomstack]    Script Date: 4/29/2016 11:07:31 PM ******/
+/****** Object:  Database [thebroomstack]    Script Date: 4/30/2016 11:29:01 PM ******/
 CREATE DATABASE [thebroomstack]
  CONTAINMENT = NONE
  ON  PRIMARY
@@ -77,7 +77,7 @@ EXEC sys.sp_db_vardecimal_storage_format N'thebroomstack', N'ON'
 GO
 USE [thebroomstack]
 GO
-/****** Object:  Table [dbo].[tbl_game]    Script Date: 4/29/2016 11:07:31 PM ******/
+/****** Object:  Table [dbo].[tbl_game]    Script Date: 4/30/2016 11:29:01 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -97,7 +97,31 @@ CREATE TABLE [dbo].[tbl_game](
 ) ON [PRIMARY]
 
 GO
-/****** Object:  Table [dbo].[tbl_person]    Script Date: 4/29/2016 11:07:31 PM ******/
+/****** Object:  Table [dbo].[tbl_membership]    Script Date: 4/30/2016 11:29:01 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[tbl_membership](
+	[person_id] [uniqueidentifier] NOT NULL,
+	[membershiptype] [nvarchar](100) NOT NULL,
+	[notes] [text] NULL,
+	[expiration] [smalldatetime] NULL
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+
+GO
+/****** Object:  Table [dbo].[tbl_membershiptype]    Script Date: 4/30/2016 11:29:01 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[tbl_membershiptype](
+	[type] [nvarchar](100) NOT NULL,
+	[cost] [smallmoney] NOT NULL
+) ON [PRIMARY]
+
+GO
+/****** Object:  Table [dbo].[tbl_person]    Script Date: 4/30/2016 11:29:01 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -107,12 +131,17 @@ CREATE TABLE [dbo].[tbl_person](
 	[firstname] [nvarchar](500) NULL,
 	[lastname] [nvarchar](500) NULL,
 	[displayname] [nvarchar](500) NOT NULL,
+	[waiversigneddate] [date] NULL,
 	[profile_id] [uniqueidentifier] NULL,
-	[user_id] [uniqueidentifier] NULL
+	[user_id] [uniqueidentifier] NULL,
+ CONSTRAINT [PK_tbl_person] PRIMARY KEY CLUSTERED
+(
+	[id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
 ) ON [PRIMARY]
 
 GO
-/****** Object:  Table [dbo].[tbl_position]    Script Date: 4/29/2016 11:07:31 PM ******/
+/****** Object:  Table [dbo].[tbl_position]    Script Date: 4/30/2016 11:29:01 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -123,7 +152,7 @@ CREATE TABLE [dbo].[tbl_position](
 ) ON [PRIMARY]
 
 GO
-/****** Object:  Table [dbo].[tbl_team]    Script Date: 4/29/2016 11:07:31 PM ******/
+/****** Object:  Table [dbo].[tbl_team]    Script Date: 4/30/2016 11:29:01 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -135,7 +164,7 @@ CREATE TABLE [dbo].[tbl_team](
 ) ON [PRIMARY]
 
 GO
-/****** Object:  Table [dbo].[tbl_teammember]    Script Date: 4/29/2016 11:07:31 PM ******/
+/****** Object:  Table [dbo].[tbl_teammember]    Script Date: 4/30/2016 11:29:01 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -152,7 +181,7 @@ CREATE TABLE [dbo].[tbl_teammember](
 ) ON [PRIMARY]
 
 GO
-/****** Object:  Table [dbo].[tbl_teamtype]    Script Date: 4/29/2016 11:07:31 PM ******/
+/****** Object:  Table [dbo].[tbl_teamtype]    Script Date: 4/30/2016 11:29:01 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -163,7 +192,7 @@ CREATE TABLE [dbo].[tbl_teamtype](
 ) ON [PRIMARY]
 
 GO
-/****** Object:  Table [dbo].[tbl_user]    Script Date: 4/29/2016 11:07:31 PM ******/
+/****** Object:  Table [dbo].[tbl_user]    Script Date: 4/30/2016 11:29:01 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -180,19 +209,74 @@ CREATE TABLE [dbo].[tbl_user](
 ) ON [PRIMARY]
 
 GO
-/****** Object:  Index [IX_tbl_game_team1]    Script Date: 4/29/2016 11:07:31 PM ******/
+/****** Object:  Index [IX_tbl_game_team1]    Script Date: 4/30/2016 11:29:01 PM ******/
 CREATE NONCLUSTERED INDEX [IX_tbl_game_team1] ON [dbo].[tbl_game]
 (
 	[team1] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
 GO
-/****** Object:  Index [IX_tbl_game_team2]    Script Date: 4/29/2016 11:07:31 PM ******/
+/****** Object:  Index [IX_tbl_game_team2]    Script Date: 4/30/2016 11:29:01 PM ******/
 CREATE NONCLUSTERED INDEX [IX_tbl_game_team2] ON [dbo].[tbl_game]
 (
 	[team2] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
 GO
-/****** Object:  StoredProcedure [dbo].[prc_AddPerson]    Script Date: 4/29/2016 11:07:31 PM ******/
+/****** Object:  StoredProcedure [dbo].[prc_AddMembership]    Script Date: 4/30/2016 11:29:01 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+-- =============================================
+-- Author:		<Author,,Name>
+-- Create date: <Create Date,,>
+-- Description:	<Description,,>
+-- =============================================
+CREATE PROCEDURE [dbo].[prc_AddMembership]
+	-- Add the parameters for the stored procedure here
+	@membershiptype nvarchar(100),
+	@person_id uniqueidentifier = null,
+	@email nvarchar(500) = null,
+	@notes text = null,
+	@expiration smalldatetime = null
+AS
+BEGIN
+	-- SET NOCOUNT ON added to prevent extra result sets from
+	-- interfering with SELECT statements.
+	SET NOCOUNT ON;
+
+	IF (@person_id IS NOT NULL AND @email IS NOT NULL)
+		THROW 20005, 'Either specify a person ID or an email, not both.', 1;
+	IF (@person_id IS NULL AND @email IS NULL)
+		THROW 20006, 'Either specify a person ID or an email.', 1;
+
+	-- If email was sent, find the person id.
+	IF (@email IS NOT NULL)
+	BEGIN
+		SET @person_id = (SELECT [person_id] FROM tbl_user WHERE [email] = @email);
+
+		IF (@person_id IS NULL)
+			THROW 20004, 'User not found.', 1;
+	END
+
+	-- Person ID was sent. Make sure it exists.
+	IF (@email IS NULL)
+	BEGIN
+		IF ((SELECT COUNT(*) FROM tbl_user WHERE [person_id] = @person_id) <> 1)
+			THROW 20004, 'User not found.', 1;
+	END
+
+	-- Make sure the membership type exists
+    IF ((SELECT COUNT(*) FROM tbl_membershiptype WHERE [type] = @membershiptype) <> 1)
+		THROW 20003, 'Membership type not found.', 1;
+
+	-- Add the new membership
+	INSERT INTO
+		tbl_membership ([person_id], [membershiptype], [notes], [expiration])
+	VALUES (@person_id, @membershiptype, @notes, @expiration);
+END
+
+GO
+/****** Object:  StoredProcedure [dbo].[prc_AddPerson]    Script Date: 4/30/2016 11:29:01 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -224,7 +308,7 @@ BEGIN
 		(@id, @firstname, @lastname, @displayname, @profile_id, @user_id);
 END
 GO
-/****** Object:  StoredProcedure [dbo].[prc_AddPersonToTeam]    Script Date: 4/29/2016 11:07:31 PM ******/
+/****** Object:  StoredProcedure [dbo].[prc_AddPersonToTeam]    Script Date: 4/30/2016 11:29:01 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -342,7 +426,7 @@ BEGIN
 END
 
 GO
-/****** Object:  StoredProcedure [dbo].[prc_AddUser]    Script Date: 4/29/2016 11:07:31 PM ******/
+/****** Object:  StoredProcedure [dbo].[prc_AddUser]    Script Date: 4/30/2016 11:29:01 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -366,7 +450,7 @@ BEGIN
 	-- interfering with SELECT statements.
 	SET NOCOUNT ON;
 
-    -- Add person
+	-- Add person
 	DECLARE @return_value INT;
 	DECLARE @person_id UNIQUEIDENTIFIER;
 	EXEC	@return_value = [dbo].[prc_AddPerson]

@@ -18,6 +18,7 @@
 /// <reference path="browser/definitions/domready/domready.d.ts" />
 /// <reference path="browser/definitions/domready/index.d.ts" />
 /// <reference path="browser/definitions/guid/index.d.ts" />
+/// <reference path="browser/definitions/jsonwebtoken/index.d.ts" />
 /// <reference path="browser/definitions/koa-bodyparser/index.d.ts" />
 /// <reference path="browser/definitions/koa-router/index.d.ts" />
 /// <reference path="browser/definitions/koa-router/koa-router.d.ts" />
