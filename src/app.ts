@@ -4,6 +4,8 @@ import guid = require("guid");
 import jwt = require("jsonwebtoken");
 import koa = require("koa");
 import koaRouter = require("koa-router");
+import pat = require("./pat");
+import sql = require("./sql");
 import tokenValidator = require("./tokenvalidator");
 import Q = require("q");
 
@@ -38,25 +40,26 @@ class TheBroomStack {
 	}
 
 	public async init() {
-		const keys = await bootstrap.init();
+		const keys = await bootstrap.getKeys();
 
 		({ public: this._publicKey, private: this._privateKey } = keys);
 		this._koaApp = new koa();
 		this._router = new koaRouter();
 		this.authenticate = tokenValidator(this.publicKey);
 		this.setupRoutes();
-		this.setupMiddleware();
+		await this.setupMiddleware();
 	}
 
-	private setupMiddleware() {
+	private async setupMiddleware() {
 		this.koa.use(bodyParser());
+		this.koa.use(sql.connectSql(await bootstrap.getConnectionInfo()));
 		this.koa.use((<any>this.router).routes());
 	}
 
 	private setupRoutes() {
 
 		this.router.get("/login", async (ctx, next) => {
-			const token = jwt.sign({user: "trevorsg"}, this._privateKey, { algorithm: "RS256" });
+			const token = jwt.sign({user: "trevorsg"}, this._privateKey, { algorithm: "RS256", expiresIn: "24h", notBefore: "1h" });
 			ctx.body = token;
 		});
 
@@ -67,14 +70,13 @@ class TheBroomStack {
 
 		this.router.post("/person", async(ctx, next) => {
 			if (ctx.request.body.displayname) {
-				const connection = await mssql.connect("mssql://thebroomstack:quadtakeout@localhost/thebroomstack");
-				const request = new mssql.Request();
+				const request = new ctx.sqlConnection.Request();
 				await request
 					.input("displayname", ctx.request.body.displayname)
 					.input("firstname", ctx.request.body.firstname)
 					.input("lastname", ctx.request.body.lastname)
 					.output("id")
-					.execute("prc_AddPerson")
+					.execute("prc_AddPerson");
 
 				console.log("Added person: " + request.parameters.id.value);
 				ctx.response.body = `Hello, ${request.parameters.id.value}!`;
