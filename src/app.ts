@@ -1,5 +1,6 @@
 import bodyParser = require("koa-bodyparser");
 import bootstrap = require("./bootstrap");
+import dispatcher = require("./dispatcher");
 import guid = require("guid");
 import jwt = require("jsonwebtoken");
 import koa = require("koa");
@@ -53,6 +54,14 @@ class TheBroomStack {
 	private async setupMiddleware() {
 		this.koa.use(bodyParser());
 		this.koa.use(sql.connectSql(await bootstrap.getConnectionInfo()));
+
+		this.koa.use((ctx, next) => {
+			console.log(JSON.stringify(ctx, null, 4));
+		});
+
+		// Dispatcher
+		//this.koa.use(dispatcher());
+
 		this.koa.use((<any>this.router).routes());
 	}
 

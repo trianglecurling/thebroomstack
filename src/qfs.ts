@@ -13,5 +13,12 @@ module qfs {
 			});
 		});
 	}
+	export function exists(filename: string) {
+		return Q.Promise<boolean>((resolve) => {
+			fs.exists(filename, (exists) => {
+				resolve(exists);
+			});
+		})
+	}
 }
 export = qfs;
