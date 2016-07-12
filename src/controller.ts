@@ -1,13 +1,13 @@
 import koa = require("koa");
 
 export class Controller {
-	constructor(private ctx: koa.Context) {
+	constructor(protected ctx: koa.Context) {
 
 	}
 
-	public dispatchAction(action: string) {
+	public async dispatchAction(action: string) {
 		if (typeof (<any>this)[action] === "function") {
-			(<any>this)[action]();
+			await (<any>this)[action]();
 		} else {
 			throw new Error(`Action ${action} not found on ${this.constructor.name}`)
 		}

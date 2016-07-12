@@ -2,7 +2,7 @@ import crypto = require("crypto");
 import jwt = require("jsonwebtoken");
 import service = require("./service");
 
-class PatService extends service.Service {
+export class PatService extends service.Service {
 	public async savePat(token: void) {
 		const tokenStr = JSON.stringify(token);
 		const hash = crypto.createHash("sha256");
@@ -17,5 +17,3 @@ class PatService extends service.Service {
 		return hashStr;
 	}
 }
-
-export = PatService;

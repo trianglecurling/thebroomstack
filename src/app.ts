@@ -1,16 +1,28 @@
-import bodyParser = require("koa-bodyparser");
-import bootstrap = require("./bootstrap");
-import dispatcher = require("./dispatcher");
-import guid = require("guid");
-import jwt = require("jsonwebtoken");
-import koa = require("koa");
-import koaRouter = require("koa-router");
-import pat = require("./pat");
-import sql = require("./sql");
-import tokenValidator = require("./tokenvalidator");
-import Q = require("q");
+import * as bodyParser from "koa-bodyparser";
+import * as bootstrap from "./bootstrap";
+import * as Constants from "./constants";
+import * as dispatcher from "./dispatcher";
+import * as jwt from "jsonwebtoken";
+import * as koa from "koa";
+import * as koaRouter from "koa-router";
+import * as mssql from "mssql";
+import { getBroomstackOverrides } from "./overrides";
+import { PatService } from "./pat";
+import * as Q from "q";
+import * as sql from "./sql";
+import * as tokenValidator from "./tokenvalidator";
+import * as ctxUtils from "./utils/context";
+import { HttpError } from "./utils/errors";
 
-var mssql = require("mssql");
+declare module "koa" {
+	interface Request {
+		body?: { [key: string]: any } | string;
+	}
+
+	interface IMiddleware {
+		(ctx: koa.Context, next: Function): any;
+	}
+}
 
 class TheBroomStack {
 	private _publicKey: string;
@@ -18,7 +30,7 @@ class TheBroomStack {
 	private _koaApp: koa;
 	private _router: koaRouter;
 
-	private authenticate: (ctx: koa.Context, next: Function) => void;
+	private authenticate: koaRouter.IMiddleware;
 
 	constructor() {
 
@@ -47,22 +59,31 @@ class TheBroomStack {
 		this._koaApp = new koa();
 		this._router = new koaRouter();
 		this.authenticate = tokenValidator(this.publicKey);
-		this.setupRoutes();
+		//this.setupRoutes();
 		await this.setupMiddleware();
 	}
 
+	private getContextVerifier(): koa.IMiddleware {
+		return async (ctx, next) => {
+			ctxUtils.checkReq(ctx);
+			ctxUtils.checkRes(ctx);
+			if (typeof next === "function") {
+				await next();
+			}
+		}
+	}
+
 	private async setupMiddleware() {
+		this.koa.use(this.getContextVerifier());
+		this.koa.use(<koa.IMiddleware>getBroomstackOverrides().routes());
 		this.koa.use(bodyParser());
 		this.koa.use(sql.connectSql(await bootstrap.getConnectionInfo()));
-
-		this.koa.use((ctx, next) => {
-			console.log(JSON.stringify(ctx, null, 4));
+		const theBroomstackDispatcher = new dispatcher.Dispatcher({
+			controllersPath: Constants.CONTROLLER_PATH
 		});
 
 		// Dispatcher
-		//this.koa.use(dispatcher());
-
-		this.koa.use((<any>this.router).routes());
+		this.koa.use(theBroomstackDispatcher.getDispatcher());
 	}
 
 	private setupRoutes() {
@@ -73,21 +94,27 @@ class TheBroomStack {
 		});
 
 		this.router.get("/hello", this.authenticate, async (ctx, next) => {
-			await next();
+			if (next) {
+				await next();
+			}
 			ctx.body = "Waving hello.";
 		});
 
 		this.router.post("/person", async(ctx, next) => {
-			if (ctx.request.body.displayname) {
+			if (ctx.request && ctxUtils.isJsonBody(ctx.request.body) && ctx.request.body["displayname"]) {
 				const request = new ctx.sqlConnection.Request();
 				await request
-					.input("displayname", ctx.request.body.displayname)
-					.input("firstname", ctx.request.body.firstname)
-					.input("lastname", ctx.request.body.lastname)
+					.input("displayname", ctx.request.body["displayname"])
+					.input("firstname", ctx.request.body["firstname"])
+					.input("lastname", ctx.request.body["lastname"])
 					.output("id")
 					.execute("prc_AddPerson");
 
 				console.log("Added person: " + request.parameters.id.value);
+
+				if (!ctx.response) {
+					throw new HttpError(500, "No body in koa context.");
+				}
 				ctx.response.body = `Hello, ${request.parameters.id.value}!`;
 			} else {
 				throw new Error("A person requires a display name.");

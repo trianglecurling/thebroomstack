@@ -1,8 +1,15 @@
+import { HttpError } from "./utils/errors"
+
+import * as ctxUtils from "./utils/context";
 import jwt = require("jsonwebtoken");
 import koa = require("koa");
+import * as koaRouter from "koa-router";
 
-const validator = function(key: string)  {
-	return async (ctx: koa.Context, next: Function) => {
+const validator = function(key: string): koaRouter.IMiddleware {
+	return async (ctx: koaRouter.IRouterContext, next: () => any) => {
+		if (!ctx.req) {
+			throw new HttpError(500, "No request object in koa context.");
+		}
 		const authHeader: string = ctx.req.headers["authorization"];
 		if (authHeader) {
 			const [type, token] = authHeader.split(" ");
@@ -21,5 +28,6 @@ const validator = function(key: string)  {
 		}
 	};
 }
+
 
 export = validator;

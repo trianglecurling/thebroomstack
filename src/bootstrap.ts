@@ -8,7 +8,7 @@ interface KeyPair {
 	private: string;
 }
 
-module Bootstrap {
+namespace Bootstrap {
 
 	export const SECRETS_PATH = path.join(require.main.filename, "../../..", "_private");
 	const PUBLIC_KEY_PATH = path.join(SECRETS_PATH, "key.pub.pem");

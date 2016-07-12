@@ -1,19 +1,20 @@
-import _ = require("lodash");
-import controller = require("./controller");
-import koa = require("koa");
-import path = require("path");
-import qfs = require("./qfs");
-import url = require("url");
+import * as _ from "lodash";
+import * as controller from "./controller";
+import * as koa from "koa";
+import * as path from "path";
+import * as qfs from "./qfs";
+import * as url from "url";
+import { HttpError } from "./utils/errors";
 
 interface UrlParts {
 	full: string;
 	protocol: string;
 	host: string;
 	hostname: string;
-	subdomain: string;
-	port: number;
+	subdomain?: string;
+	port?: number;
 	path: string;
-	query: string;
+	query?: string;
 	controller: string;
 	action: string;
 	staticPath: boolean;
@@ -22,6 +23,12 @@ interface UrlParts {
 }
 
 export interface DispatcherConfig {
+	defaultController: string;
+	defaultAction: string;
+	controllersPath: string;
+}
+
+export interface DispatcherOptions {
 	defaultController?: string;
 	defaultAction?: string;
 	controllersPath: string;
@@ -35,19 +42,18 @@ declare module "koa" {
 }
 
 export class Dispatcher {
-
-	constructor(public config: DispatcherConfig) {
-		if (!config.defaultAction) {
-			config.defaultAction = "index";
-		}
-		if (!config.defaultController) {
-			config.defaultController = "home";
-		}
+	public config: DispatcherConfig;
+	constructor(options: DispatcherOptions) {
+		this.config = {
+			defaultController: options.defaultController || "home",
+			defaultAction: options.defaultAction || "index",
+			controllersPath: options.controllersPath
+		};
 	}
 
 	public getDispatcher() {
 		return async (ctx: koa.Context, next: Function) => {
-			const parsedUrl = this.parseUrl(ctx.request.header.host + ctx.request.url);
+			const parsedUrl = this.parseUrl(ctx.request!.header.host + ctx.request!.url);
 			ctx.parsedUrl = parsedUrl;
 			const controller = await this.controllerFactory(parsedUrl.controller, ctx);
 			await controller.dispatchAction(parsedUrl.action);
@@ -57,7 +63,7 @@ export class Dispatcher {
 
 	private async controllerFactory(controllerName: string, ctx: koa.Context): Promise<controller.Controller> {
 		const controllerClass = this.controllerClassName(controllerName);
-		const controllerPath = path.join(this.config.controllersPath, controllerClass);
+		const controllerPath = path.resolve(path.join(this.config.controllersPath, controllerClass + ".js"));
 		if (await qfs.exists(controllerPath)) {
 			const controllerModule = require(controllerPath);
 
@@ -73,12 +79,20 @@ export class Dispatcher {
 	}
 
 	private controllerClassName(controllerName: string) {
-		return _.capitalize(controllerName) + "Controller.js";
+		return `${_.capitalize(controllerName)}Controller`;
 	}
 
-	private parseUrl(urlStr: string) {
+	private parseUrl(urlStr: string): UrlParts {
 		const nodeUrl = url.parse(urlStr, true);
-		const pathParts = nodeUrl.pathname.split("/");
+		if (
+			!nodeUrl.pathname ||
+			!nodeUrl.hostname ||
+			!nodeUrl.href ||
+			!nodeUrl.protocol ||
+			!nodeUrl.host) {
+			throw new HttpError(401, "Could not parse URL.");
+		}
+		const pathParts = nodeUrl.pathname.split("/").slice(1);
 
 		// Special paths
 		let apiPath = false;
@@ -93,17 +107,17 @@ export class Dispatcher {
 
 		// Subdomain
 		const hostnameParts = nodeUrl.hostname.split(".");
-		let subdomain: string = null;
+		let subdomain: string | undefined = undefined;
 		if (hostnameParts.length > 2) {
 			subdomain = hostnameParts.slice(0, hostnameParts.length - 2).join(".");
 		}
 
 		// Controller & action
-		let controller: string = null;
-		let action: string = null;
+		let controller: string;
+		let action: string;
 		if (!staticPath) {
 			if (pathParts.length > 0) {
-				controller = pathParts[0];
+				controller = pathParts[0] || this.config.defaultController;
 			} else {
 				controller = this.config.defaultController;
 			}
@@ -112,6 +126,9 @@ export class Dispatcher {
 			} else {
 				action = this.config.defaultAction;
 			}
+		} else {
+			controller = "static";
+			action = "index";
 		}
 
 		// Parameters
@@ -132,7 +149,7 @@ export class Dispatcher {
 			host: nodeUrl.host,
 			hostname: nodeUrl.hostname,
 			subdomain: subdomain,
-			port: parseInt(nodeUrl.port),
+			port: nodeUrl.port && parseInt(nodeUrl.port),
 			path: nodeUrl.pathname,
 			query: nodeUrl.search,
 			controller: controller,

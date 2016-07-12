@@ -5,11 +5,16 @@
 		"removeComments": true,
 		"outDir": "build/Release/",
 		"sourceMap": true,
-		"target": "es6"
+		"target": "es6",
+		"forceConsistentCasingInFileNames": true,
+		"noFallthroughCasesInSwitch": true,
+		"noImplicitReturns": true,
+		"pretty": true,
+		"strictNullChecks": true
 	},
 	"files": [
 		"src/app.ts",
-		"typings/main.d.ts"
-		/*"typings/browser.d.ts"*/
+		"src/controller/PersonController.ts",
+		"src/controller/HomeController.ts"
 	]
 }

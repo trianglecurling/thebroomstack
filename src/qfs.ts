@@ -13,12 +13,23 @@ module qfs {
 			});
 		});
 	}
+	export function readFileBinary(filename: string) {
+		return Q.Promise<Buffer>((resolve, reject) => {
+			fs.readFile(filename, (err, data) => {
+				if (err) {
+					reject(err);
+				} else {
+					resolve(data);
+				}
+			});
+		});
+	}
 	export function exists(filename: string) {
 		return Q.Promise<boolean>((resolve) => {
 			fs.exists(filename, (exists) => {
 				resolve(exists);
 			});
-		})
+		});
 	}
 }
 export = qfs;
