@@ -1,6 +1,8 @@
 import koa = require("koa");
+import * as view from "./view";
 
-export class Controller {
+export abstract class Controller {
+	protected view: view.BaseView;
 	constructor(protected ctx: koa.Context) {
 
 	}
@@ -9,7 +11,14 @@ export class Controller {
 		if (typeof (<any>this)[action] === "function") {
 			await (<any>this)[action]();
 		} else {
-			throw new Error(`Action ${action} not found on ${this.constructor.name}`)
+			throw new Error(`Action ${action} not found on ${this.constructor.name}`);
 		}
+	}
+
+	protected getView(): view.BaseView {
+		if (!this.view) {
+			this.view = new view.EmptyView(this.ctx);
+		}
+		return this.view;
 	}
 }
