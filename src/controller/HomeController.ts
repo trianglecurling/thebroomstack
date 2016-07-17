@@ -3,10 +3,10 @@ import * as view from "../view";
 import koa = require("koa");
 
 export class HomeController extends Controller {
-	protected view: view.TemplatedView;
+	protected view: view.HandlebarsView;
 	constructor (ctx: koa.Context) {
 		super(ctx);
-		this.view = new view.TemplatedView(ctx);
+		this.view = new view.HandlebarsView(ctx);
 	}
 
 	public async index() {
@@ -14,15 +14,15 @@ export class HomeController extends Controller {
 	}
 
 	public async test() {
-		await this.getView().render("html/basic.html", {
-			"{{title}}": "This is the title",
-			"{{body}}": "This is the body"
+		await this.getView().render("basic.html", {
+			title: "This is the title",
+			body: "This is the body"
 		});
 	}
 
-	protected getView(): view.TemplatedView {
+	protected getView(): view.HandlebarsView {
 		if (!this.view) {
-			this.view = new view.TemplatedView(this.ctx);
+			this.view = new view.HandlebarsView(this.ctx);
 		}
 		return this.view;
 	}

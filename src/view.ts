@@ -1,9 +1,11 @@
 import * as koa from "koa";
 import * as constants from "./constants";
+import * as handlebars from "handlebars";
 import * as Q from "q";
 import * as qfs from "./qfs";
 import * as path from "path";
 import { HttpError } from "./utils/errors";
+import { hashCode } from "./utils/string";
 
 export abstract class BaseView {
 	constructor(protected ctx: koa.Context) {
@@ -37,25 +39,73 @@ export class JSONView extends StringView {
 }
 
 export class TemplatedView extends StringView {
-	protected static templateDir = constants.TEMPLATE_PATH;
-
 	protected async getTemplateString(name: string) {
 		return qfs.readFile(this.getTemplatePath(name));
 	}
 
 	protected getTemplatePath(name: string) {
-		return path.join(TemplatedView.templateDir, name);
+		return path.join(constants.TEMPLATE_PATH, name);
 	}
 
-	protected makeReplacements(string: string, replacements: { [find: string]: string }) {
+	protected makeReplacements(string: string, replacements: { [find: string]: any }) {
 		Object.keys(replacements).forEach(k => {
-			string = string.split(k).join(replacements[k]);
+			string = string.split(k).join(String(replacements[k]));
 		});
 		return string;
 	}
 
-	public async render(layoutName: string, replacements: { [find: string]: string } = {}) {
+	public async render(layoutName: string, replacements: { [find: string]: any } = {}) {
 		const template = await this.getTemplateString(layoutName);
 		super.render(this.makeReplacements(template, replacements));
+	}
+}
+
+export class TemplateCache {
+	private static instance: TemplateCache;
+	private hashCache: { [templateHash: number]: HandlebarsTemplateDelegate } = {};
+	private pathCache: { [templatePath: string]: HandlebarsTemplateDelegate } = {};
+
+	private constructor() {	}
+	public static getInstance() {
+		if (!TemplateCache.instance) {
+			TemplateCache.instance = new TemplateCache();
+		}
+		return TemplateCache.instance;
+	}
+	public setTemplate(templatePath: string, template: HandlebarsTemplateDelegate): void;
+	public setTemplate(templateHash: number, template: HandlebarsTemplateDelegate): void;
+	public setTemplate(key: string | number, template: HandlebarsTemplateDelegate) {
+		if (typeof key === "string") {
+			this.pathCache[key] = template;
+		} else {
+			this.hashCache[key] = template;
+		}
+	}
+
+	public getTemplate(templatePath: string): HandlebarsTemplateDelegate;
+	public getTemplate(templateHash: number): HandlebarsTemplateDelegate;
+	public getTemplate(key: string | number) {
+		if (typeof key === "string") {
+			return this.pathCache[key];
+		} else {
+			return this.hashCache[key];
+		}
+	}
+}
+
+export class HandlebarsView extends TemplatedView {
+	protected getTemplatePath(name: string) {
+		return super.getTemplatePath(path.join("handlebars", name));
+	}
+	public async render(layoutName: string, replacements: { [find: string]: any } = {}) {
+		const templateCache = TemplateCache.getInstance();
+		let templateDelegate = templateCache.getTemplate(layoutName);
+		if (!templateDelegate) {
+			const templateStr = await super.getTemplateString(layoutName);
+			templateDelegate = handlebars.compile(templateStr);
+			templateCache.setTemplate(layoutName, templateDelegate);
+			templateCache.setTemplate(hashCode(templateStr), templateDelegate);
+		}
+		this.ctx.body = templateDelegate(replacements);
 	}
 }
