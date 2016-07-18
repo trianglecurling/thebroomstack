@@ -27,7 +27,12 @@
     "request": "^2.69.0"
   },
   "scripts": {
-    "test": "mocha"
+    "test": "mocha",
+    "build": "tsc -p ./src/client && tsc -p ./src/server",
+    "prebuild": "npm run clean",
+    "postbuild": "npm run pack",
+    "clean": "rm -rf ./build/*",
+    "pack": "webpack"
   },
   "repository": {
     "type": "git",
@@ -43,6 +48,8 @@
   },
   "homepage": "https://github.com/trevorsg/thebroomstack#readme",
   "devDependencies": {
-    "typescript": "^2.0.0-dev.20160704"
+    "mocha": "^2.5.3",
+    "typescript": "^2.0.0",
+    "webpack": "^1.13.1"
   }
 }

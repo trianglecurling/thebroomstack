@@ -1,0 +1,20 @@
+{
+	"compilerOptions": {
+		"module": "commonjs",
+		"noImplicitAny": true,
+		"removeComments": true,
+		"outDir": "../../build/release/server",
+		"sourceMap": true,
+		"target": "es6",
+		"forceConsistentCasingInFileNames": true,
+		"noFallthroughCasesInSwitch": true,
+		"noImplicitReturns": true,
+		"pretty": true,
+		"strictNullChecks": true
+	},
+	"files": [
+		"app.ts",
+		"controller/PersonController.ts",
+		"controller/HomeController.ts"
+	]
+}

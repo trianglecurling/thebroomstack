@@ -9,8 +9,8 @@ module BroomstackOverrides {
 		const router = new koaRouter();
 		router.get("/favicon.ico", async (ctx, next) => {
 			const image = await qfs.readFileBinary(path.join(Constants.ASSET_PATH, "img", "favicon.ico"));
-			ctx.response!.type = "image/x-icon";
-			ctx.response!.body = image;
+			ctx.type = "image/x-icon";
+			ctx.body = image;
 		});
 		return router;
 	}

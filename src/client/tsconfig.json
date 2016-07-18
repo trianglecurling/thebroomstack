@@ -3,9 +3,9 @@
 		"module": "commonjs",
 		"noImplicitAny": true,
 		"removeComments": true,
-		"outDir": "build/Release/",
+		"outDir": "../../build/release/client",
 		"sourceMap": true,
-		"target": "es6",
+		"target": "es5",
 		"forceConsistentCasingInFileNames": true,
 		"noFallthroughCasesInSwitch": true,
 		"noImplicitReturns": true,
@@ -13,8 +13,6 @@
 		"strictNullChecks": true
 	},
 	"files": [
-		"src/app.ts",
-		"src/controller/PersonController.ts",
-		"src/controller/HomeController.ts"
+		"app.ts"
 	]
 }
