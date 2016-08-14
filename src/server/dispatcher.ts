@@ -6,7 +6,7 @@ import * as qfs from "./qfs";
 import * as url from "url";
 import { HttpError } from "./utils/errors";
 
-interface UrlParts {
+export interface UrlParts {
 	full: string;
 	protocol: string;
 	host: string;
@@ -17,8 +17,8 @@ interface UrlParts {
 	query?: string;
 	controller: string;
 	action: string;
-	staticPath: boolean;
-	apiPath: boolean;
+	staticPath: string | null;
+	apiRoute: boolean;
 	params: { [key: string]: string };
 }
 
@@ -95,14 +95,14 @@ export class Dispatcher {
 		const pathParts = nodeUrl.pathname.split("/").slice(1);
 
 		// Special paths
-		let apiPath = false;
-		let staticPath = false;
+		let apiRoute = false;
+		let staticPath: string | null = null;
 		if (pathParts[0] === "_apis") {
-			apiPath = true;
+			apiRoute = true;
 			pathParts.shift();
 		} else if (pathParts[0] === "_static") {
-			staticPath = true;
 			pathParts.shift();
+			staticPath = pathParts.join("/");
 		}
 
 		// Subdomain
@@ -155,7 +155,7 @@ export class Dispatcher {
 			controller: controller,
 			action: action,
 			staticPath: staticPath,
-			apiPath: apiPath,
+			apiRoute: apiRoute,
 			params: params
 		};
 	}

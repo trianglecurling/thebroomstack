@@ -10,9 +10,11 @@
 		"noFallthroughCasesInSwitch": true,
 		"noImplicitReturns": true,
 		"pretty": true,
-		"strictNullChecks": true
+		"strictNullChecks": true,
+		"typeRoots": ["../types"]
 	},
 	"files": [
-		"app.ts"
+		"app.ts",
+		"../types/webpack-env/index.d.ts" /* TEMPORARY UNTIL #203 is FIXED */
 	]
 }

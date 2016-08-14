@@ -12,7 +12,11 @@
     "@types/mssql": "^3.1.26-alpha",
     "@types/node": "^4.0.26-alpha",
     "@types/q": "0.0.25-alpha",
+    "@types/webpack": "^1.12.31",
+    "autoprefixer": "^6.4.0",
+    "awesome-typescript-loader": "^2.1.1",
     "browserify": "^13.0.0",
+    "css-loader": "^0.23.1",
     "guid": "0.0.12",
     "handlebars": "^4.0.5",
     "jsdom": "^8.1.0",
@@ -23,16 +27,22 @@
     "lodash": "^4.6.1",
     "mssql": "^3.2.1",
     "node-rsa": "^0.3.2",
+    "node-sass": "^3.8.0",
+    "postcss-loader": "^0.9.1",
     "q": "^1.4.1",
-    "request": "^2.69.0"
+    "request": "^2.69.0",
+    "sass-loader": "^4.0.0",
+    "style-loader": "^0.13.1",
+    "ts-loader": "^0.8.2"
   },
   "scripts": {
     "test": "mocha",
-    "build": "tsc -p ./src/client && tsc -p ./src/server",
+    "build": "tsc -p ./src/server",
     "prebuild": "npm run clean",
     "postbuild": "npm run pack",
     "clean": "rm -rf ./build/*",
-    "pack": "webpack"
+    "pack": "webpack",
+    "start": "nodemon ./build/release/server/app.js"
   },
   "repository": {
     "type": "git",
@@ -48,8 +58,10 @@
   },
   "homepage": "https://github.com/trevorsg/thebroomstack#readme",
   "devDependencies": {
+    "autoprefixer": "^6.4.0",
     "mocha": "^2.5.3",
     "typescript": "^2.0.0",
-    "webpack": "^1.13.1"
+    "webpack": "^1.13.1",
+    "webpack-dev-server": "^1.14.1"
   }
 }

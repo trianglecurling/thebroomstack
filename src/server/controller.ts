@@ -1,5 +1,13 @@
 import koa = require("koa");
 import * as view from "./view";
+import {UrlParts} from "./dispatcher";
+
+// Augment koa.Context to include parsedUrl
+declare module "koa" {
+	interface Context {
+		parsedUrl: UrlParts;
+	}
+}
 
 export abstract class Controller {
 	protected view: view.BaseView;

@@ -1,12 +1,12 @@
 import { Controller } from "../controller";
-import * as view from "../view";
+import { HandlebarsView } from "../view";
 import koa = require("koa");
 
 export class HomeController extends Controller {
-	protected view: view.HandlebarsView;
+	protected view: HandlebarsView;
 	constructor (ctx: koa.Context) {
 		super(ctx);
-		this.view = new view.HandlebarsView(ctx);
+		this.view = new HandlebarsView(ctx);
 	}
 
 	public async index() {
@@ -20,9 +20,9 @@ export class HomeController extends Controller {
 		});
 	}
 
-	protected getView(): view.HandlebarsView {
+	protected getView(): HandlebarsView {
 		if (!this.view) {
-			this.view = new view.HandlebarsView(this.ctx);
+			this.view = new HandlebarsView(this.ctx);
 		}
 		return this.view;
 	}
