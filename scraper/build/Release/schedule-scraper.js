@@ -59,41 +59,41 @@ request.get(site + "/administrator", {}, function (error, response, body) {
                 console.log("Navigating to curling manager main page...");
                 request.get(site + "/administrator/index.php?option=com_curling", { headers: stdHeaders }, function (error, response, body) {
                     console.log("Scraping game data...");
-                    jsdom.env(body, ["http://code.jquery.com/jquery.min.js"], function (errors, window) {
-                        var $ = window.$;
-                        var $table = $("table.table-striped");
-                        if ($table.length === 0) {
+                    jsdom.env(body, [], function (errors, window) {
+                        var document = window.document;
+                        var table = document.querySelector("table.table-striped");
+                        if (!table) {
                             console.log("There are no ice bookings in the schedule for today.");
                         }
                         else {
-                            var $rows = $table.find("tbody tr");
-                            var currentLeague_1 = "";
-                            $rows.each(function (index, row) {
-                                var $row = $(row);
-                                var $timeCell = $row.find("td").eq(0);
-                                var timeColSpan = $timeCell.attr("colspan");
+                            var rows = table.querySelectorAll("tbody tr");
+                            var currentLeague = "";
+                            for (var i = 0; i < rows.length; ++i) {
+                                var row = rows.item(i);
+                                var timeCell = row.querySelectorAll("td").item(0);
+                                var timeColSpan = parseInt(timeCell.getAttribute("colspan"));
                                 if (timeColSpan && timeColSpan > 1) {
-                                    currentLeague_1 = $timeCell.text().trim();
-                                    return true;
+                                    currentLeague = timeCell.textContent.trim();
+                                    continue;
                                 }
-                                var time = $timeCell.text();
+                                var time = timeCell.textContent;
                                 var _a = timeRE.exec(time), fullTime = _a[0], hour = _a[1], minute = _a[2], meridian = _a[3];
                                 var curDate = new Date();
                                 var dateTime = new Date(curDate.getFullYear(), curDate.getMonth(), curDate.getDate(), parseInt(hour, 10) % 12 + (meridian === "PM" ? 12 : 0), parseInt(minute, 10));
-                                var sheet = $row.find("td").eq(1).text().trim();
+                                var sheet = row.querySelectorAll("td").item(1).textContent.trim();
                                 if (["A", "B", "C", "D"].indexOf(sheet) === -1) {
-                                    return true;
+                                    continue;
                                 }
-                                var teams = $row.find("td").eq(2).text().trim();
+                                var teams = row.querySelectorAll("td").item(2).textContent.trim();
                                 var _b = teams.split("vs").map(function (t) { return t.trim(); }), team1 = _b[0], team2 = _b[1];
                                 todaysGames.push({
                                     time: dateTime,
-                                    league: currentLeague_1,
+                                    league: currentLeague,
                                     sheet: sheet,
                                     team1: team1,
                                     team2: team2
                                 });
-                            });
+                            }
                             if (!skipRosters) {
                                 var teamsToFetch = todaysGames.map(function (g) { return ({ skip: g.team1, league: g.league }); }).concat(todaysGames.map(function (g) { return ({ skip: g.team2, league: g.league }); }));
                                 console.log("Finished games. Now fetching teams rosters for " + teamsToFetch.map(function (t) { return t.skip; }).join("; ") + "...");
@@ -121,45 +121,45 @@ request.get(site + "/administrator", {}, function (error, response, body) {
 });
 var leagues = [
     {
-        name: "Sunday Morning Open - Winter 2016",
+        name: "Sunday Morning Open - Fall 2016",
         day: 0,
         hour: 11,
         minute: 0
     },
     {
-        name: "Sunday Doubles - Winter 2016",
+        name: "Sunday Doubles - Fall 2016",
         day: 0,
         hour: 18,
         minute: 0
     },
     {
-        name: "Monday Spinner - Winter 2016",
+        name: "Monday Spinner - Fall 2016",
         day: 1,
         hour: 19,
         minute: 0
     },
     {
-        name: "Tuesday Competitive - Winter 2016",
+        name: "Tuesday Open - Fall 2016",
         day: 2,
         hour: 19,
         minute: 0
     },
     {
-        name: "Wednesday Open - Winter 2016",
+        name: "Wednesday Open - 6:15 p.m. Draw - Fall 2016",
         day: 3,
         hour: 18,
+        minute: 15
+    },
+    {
+        name: "Wednesday Open - 8:30 p.m. Draw - Fall 2016",
+        day: 3,
+        hour: 20,
         minute: 30
     },
     {
-        name: "Thursday Open - Winter 2016",
+        name: "Thursday Open - Fall 2016",
         day: 4,
         hour: 19,
-        minute: 0
-    },
-    {
-        name: "Saturday Instructional - Fall 2016",
-        day: 6,
-        hour: 20,
         minute: 0
     }
 ];
@@ -198,24 +198,22 @@ var TeamScraper = (function () {
                     var leaguePromise = Q.Promise(function (resolve, reject) {
                         console.log("Navigating to teams page for league " + leagueName + "...");
                         request.get(site + "/administrator/index.php?task=teams&option=com_curling&league_id=" + _this.leagueIds[leagueName], { headers: _this.headers }, function (error, response, body) {
-                            jsdom.env(body, ["http://code.jquery.com/jquery.min.js"], function (errors, window) {
-                                var $ = window.$;
-                                var $rows = $("table.table-striped tbody tr");
+                            jsdom.env(body, [], function (errors, window) {
+                                var document = window.document;
+                                var rows = document.querySelectorAll("table.table-striped tbody tr");
                                 var teamPromises = [];
-                                var _loop_2 = function(skip) {
-                                    $rows.each(function (index, row) {
-                                        var $cells = $(row).find("td");
-                                        var teamSkip = $cells.eq(3).text().trim();
+                                for (var _i = 0, _a = teams.filter(function (t) { return t.league === leagueName; }).map(function (t) { return t.skip; }); _i < _a.length; _i++) {
+                                    var skip = _a[_i];
+                                    for (var i = 0; i < rows.length; ++i) {
+                                        var row = rows.item(i);
+                                        var cells = row.querySelectorAll("td");
+                                        var teamSkip = cells.item(3).textContent.trim();
                                         if (teamSkip === skip) {
-                                            var url = site + "/administrator/" + $cells.eq(3).find("a")[0].href;
+                                            var url = site + "/administrator/" + cells.item(3).querySelectorAll("a")[0].href;
                                             var teamPromise = _this.getTeam(url, leagueName);
                                             teamPromises.push(teamPromise);
                                         }
-                                    });
-                                };
-                                for (var _i = 0, _a = teams.filter(function (t) { return t.league === leagueName; }).map(function (t) { return t.skip; }); _i < _a.length; _i++) {
-                                    var skip = _a[_i];
-                                    _loop_2(skip);
+                                    }
                                 }
                                 return Q.all(teamPromises).then(function (teams) {
                                     console.log("All teams discovered for league " + leagueName + ".");
@@ -237,14 +235,14 @@ var TeamScraper = (function () {
                 }
                 Q.all(leaguePromises).then(function (foundTeams) {
                     var result = {};
-                    var _loop_3 = function(teams_2) {
+                    var _loop_2 = function(teams_2) {
                         Object.keys(teams_2).forEach(function (skip) {
                             result[skip + "|" + teams_2[skip].league] = teams_2[skip];
                         });
                     };
                     for (var _i = 0, foundTeams_1 = foundTeams; _i < foundTeams_1.length; _i++) {
                         var teams_2 = foundTeams_1[_i];
-                        _loop_3(teams_2);
+                        _loop_2(teams_2);
                     }
                     outerResolve(result);
                 });
@@ -256,17 +254,18 @@ var TeamScraper = (function () {
         return Q.Promise(function (resolve, reject) {
             console.log("Getting requested team...");
             request.get(url, { headers: _this.headers }, function (error, response, body) {
-                jsdom.env(body, ["http://code.jquery.com/jquery.min.js"], function (errors, window) {
-                    var $ = window.$;
-                    var name = $("input[name=team_name]").val();
-                    var s1val = $("select").eq(1).val();
-                    var s2val = $("select").eq(2).val();
-                    var s3val = $("select").eq(3).val();
-                    var s4val = $("select").eq(4).val();
-                    var skip = s1val === "0" ? null : $("option[value=" + s1val + "]").eq(0).text();
-                    var vice = s2val === "0" ? null : $("option[value=" + s2val + "]").eq(0).text();
-                    var second = s3val === "0" ? null : $("option[value=" + s3val + "]").eq(0).text();
-                    var lead = s4val === "0" ? null : $("option[value=" + s4val + "]").eq(0).text();
+                jsdom.env(body, [], function (errors, window) {
+                    var document = window.document;
+                    var name = document.querySelector("input[name=team_name]").value;
+                    var selects = document.querySelectorAll("select");
+                    var s1val = selects.item(1).value;
+                    var s2val = selects.item(2).value;
+                    var s3val = selects.item(3).value;
+                    var s4val = selects.item(4).value;
+                    var skip = s1val === "0" ? null : document.querySelectorAll("option[value='" + s1val + "']").item(0).textContent;
+                    var vice = s2val === "0" ? null : document.querySelectorAll("option[value='" + s2val + "']").item(0).textContent;
+                    var second = s3val === "0" ? null : document.querySelectorAll("option[value='" + s3val + "']").item(0).textContent;
+                    var lead = s4val === "0" ? null : document.querySelectorAll("option[value='" + s4val + "']").item(0).textContent;
                     console.log("Found team " + name);
                     resolve({ name: name, lead: lead, second: second, vice: vice, skip: skip, league: league });
                 });
@@ -282,16 +281,17 @@ var TeamScraper = (function () {
         this.leagueIds = {};
         return Q.Promise(function (resolve, reject) {
             request.get(site + "/administrator/index.php?task=teams&option=com_curling", { headers: _this.headers }, function (error, response, body) {
-                jsdom.env(body, ["http://code.jquery.com/jquery.min.js"], function (errors, window) {
-                    var $ = window.$;
-                    var $options = $("select[name=league_id] option");
-                    $options.each(function (index, element) {
-                        var optionVal = $(element).attr("value");
+                jsdom.env(body, [], function (errors, window) {
+                    var document = window.document;
+                    var options = document.querySelectorAll("select[name=league_id] option");
+                    for (var i = 0; i < options.length; ++i) {
+                        var element = options.item(i);
+                        var optionVal = element.getAttribute("value");
                         if (optionVal === "0") {
-                            return true;
+                            continue;
                         }
-                        _this.leagueIds[$(element).text()] = parseInt(optionVal, 10);
-                    });
+                        _this.leagueIds[element.textContent] = parseInt(optionVal, 10);
+                    }
                     console.log("Team ids found.");
                     resolve(null);
                 });

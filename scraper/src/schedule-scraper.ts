@@ -105,32 +105,34 @@ request.get(`${site}/administrator`, {}, (error: any, response: http.IncomingMes
 				request.get(`${site}/administrator/index.php?option=com_curling`, {headers: stdHeaders}, (error: any, response: http.IncomingMessage, body: any) => {
 					console.log("Scraping game data...");
 
-					jsdom.env(body, ["http://code.jquery.com/jquery.min.js"], (errors: Error[], window: any) => {
-						const $ = window.$;
-						const $table = $("table.table-striped");
-						if ($table.length === 0) {
+					jsdom.env(body, [], (errors: Error[], window: any) => {
+						const document = window.document;
+						const table = document.querySelector("table.table-striped");
+						if (!table) {
 							console.log("There are no ice bookings in the schedule for today.");
 						} else {
-							const $rows = $table.find("tbody tr");
+							const rows = table.querySelectorAll("tbody tr");
 							let currentLeague = "";
-							$rows.each((index: number, row: any) => {
-								const $row = $(row);
-								let $timeCell = $row.find("td").eq(0);
-								const timeColSpan = $timeCell.attr("colspan");
+							for (let i = 0; i < rows.length; ++i) {
+								const row = rows.item(i);
+								let timeCell = row.querySelectorAll("td").item(0);
+								const timeColSpan = parseInt(timeCell.getAttribute("colspan"));
+								
+								// This is a header row.
 								if (timeColSpan && timeColSpan > 1) {
-									currentLeague = $timeCell.text().trim();
-									return true; // continue;
+									currentLeague = timeCell.textContent.trim();
+									continue; // continue;
 								}
-
-								const time = $timeCell.text();
+								
+								const time = timeCell.textContent;
 								const [fullTime, hour, minute, meridian] = timeRE.exec(time);
 								const curDate = new Date();
 								const dateTime = new Date(curDate.getFullYear(), curDate.getMonth(), curDate.getDate(), parseInt(hour, 10) % 12 + (meridian === "PM" ? 12 : 0), parseInt(minute, 10));
-								const sheet: string = $row.find("td").eq(1).text().trim();
+								const sheet: string = row.querySelectorAll("td").item(1).textContent.trim();
 								if (["A", "B", "C", "D"].indexOf(sheet) === -1) {
-									return true; // continue
+									continue; // continue
 								}
-								const teams = $row.find("td").eq(2).text().trim();
+								const teams = row.querySelectorAll("td").item(2).textContent.trim();
 								const [team1, team2] = teams.split("vs").map((t: string) => t.trim());
 								todaysGames.push({
 									time: dateTime,
@@ -139,7 +141,7 @@ request.get(`${site}/administrator`, {}, (error: any, response: http.IncomingMes
 									team1: team1,
 									team2: team2
 								});
-							});
+							}
 
 							if (!skipRosters) {
 								const teamsToFetch: TeamRef[] = todaysGames.map(g => ({skip: g.team1 as string, league: g.league})).concat(todaysGames.map(g => ({skip: g.team2 as string, league: g.league})));
@@ -174,45 +176,45 @@ interface League {
 
 const leagues: League[] = [
 	{
-		name: "Sunday Morning Open - Winter 2016",
+		name: "Sunday Morning Open - Fall 2016",
 		day: 0,
 		hour: 11,
 		minute: 0
 	},
 	{
-		name: "Sunday Doubles - Winter 2016",
+		name: "Sunday Doubles - Fall 2016",
 		day: 0,
 		hour: 18,
 		minute: 0
 	},
 	{
-		name: "Monday Spinner - Winter 2016",
+		name: "Monday Spinner - Fall 2016",
 		day: 1,
 		hour: 19,
 		minute: 0
 	},
 	{
-		name: "Tuesday Competitive - Winter 2016",
+		name: "Tuesday Open - Fall 2016",
 		day: 2,
 		hour: 19,
 		minute: 0
 	},
 	{
-		name: "Wednesday Open - Winter 2016",
+		name: "Wednesday Open - 6:15 p.m. Draw - Fall 2016",
 		day: 3,
 		hour: 18,
+		minute: 15
+	},
+	{
+		name: "Wednesday Open - 8:30 p.m. Draw - Fall 2016",
+		day: 3,
+		hour: 20,
 		minute: 30
 	},
 	{
-		name: "Thursday Open - Winter 2016",
+		name: "Thursday Open - Fall 2016",
 		day: 4,
 		hour: 19,
-		minute: 0
-	},
-	{
-		name: "Saturday Instructional - Fall 2016",
-		day: 6,
-		hour: 20,
 		minute: 0
 	}
 ];
@@ -254,20 +256,21 @@ class TeamScraper {
 					const leaguePromise = Q.Promise<{[skip: string]: Team}>((resolve, reject) => {
 						console.log(`Navigating to teams page for league ${leagueName}...`);
 						request.get(`${site}/administrator/index.php?task=teams&option=com_curling&league_id=${this.leagueIds[leagueName]}`, {headers: this.headers}, (error: any, response: http.IncomingMessage, body: any) => {
-							jsdom.env(body, ["http://code.jquery.com/jquery.min.js"], (errors: Error[], window: any) => {
-								const $ = window.$;
-								const $rows = $("table.table-striped tbody tr");
+							jsdom.env(body, [], (errors: Error[], window: any) => {
+								const document = window.document;
+								const rows = document.querySelectorAll("table.table-striped tbody tr");
 								const teamPromises: Q.Promise<Team>[] = [];
 								for (const skip of teams.filter(t => t.league === leagueName).map(t => t.skip)) {
-									$rows.each((index: number, row: Element) => {
-										const $cells = $(row).find("td");
-										const teamSkip = $cells.eq(3).text().trim();
+									for (let i = 0; i < rows.length; ++i) {
+										const row = rows.item(i);
+										const cells = row.querySelectorAll("td");
+										const teamSkip = cells.item(3).textContent.trim();
 										if (teamSkip === skip) {
-											const url = `${site}/administrator/${$cells.eq(3).find("a")[0].href}`;
+											const url = `${site}/administrator/${cells.item(3).querySelectorAll("a")[0].href}`;
 											const teamPromise = this.getTeam(url, leagueName);
 											teamPromises.push(teamPromise);
 										}
-									});
+									}
 								}
 								return Q.all(teamPromises).then((teams) => {
 									console.log(`All teams discovered for league ${leagueName}.`);
@@ -299,21 +302,20 @@ class TeamScraper {
 		return Q.Promise<Team>((resolve, reject) => {
 			console.log("Getting requested team...");
 			request.get(url, {headers: this.headers}, (error: any, response: http.IncomingMessage, body: any) => {
-				jsdom.env(body, ["http://code.jquery.com/jquery.min.js"], (errors: Error[], window: any) => {
-					window.setTimeout(() => {
-						const $ = window.$;
-						const name = $("input[name=team_name]").val();
-						const s1val = $("select").eq(1).val();
-						const s2val = $("select").eq(2).val();
-						const s3val = $("select").eq(3).val();
-						const s4val = $("select").eq(4).val();
-						const skip = s1val === "0" ? null : $(`option[value=${ s1val }]`).eq(0).text();
-						const vice = s2val === "0" ? null : $(`option[value=${ s2val }]`).eq(0).text();
-						const second = s3val === "0" ? null : $(`option[value=${ s3val }]`).eq(0).text();
-						const lead = s4val === "0" ? null : $(`option[value=${ s4val }]`).eq(0).text();
-						console.log(`Found team ${name}`);
-						resolve({name: name, lead: lead, second: second, vice: vice, skip: skip, league: league});
-					}, 2000); // idk, wait for stupid race conditions?
+				jsdom.env(body, [], (errors: Error[], window: any) => {
+					const document = window.document;
+					const name = (document.querySelector("input[name=team_name]") as HTMLInputElement).value;
+					const selects = document.querySelectorAll("select");
+					const s1val = selects.item(1).value;
+					const s2val = selects.item(2).value;
+					const s3val = selects.item(3).value;
+					const s4val = selects.item(4).value;
+					const skip = s1val === "0" ? null : document.querySelectorAll(`option[value='${ s1val }']`).item(0).textContent;
+					const vice = s2val === "0" ? null : document.querySelectorAll(`option[value='${ s2val }']`).item(0).textContent;
+					const second = s3val === "0" ? null : document.querySelectorAll(`option[value='${ s3val }']`).item(0).textContent;
+					const lead = s4val === "0" ? null : document.querySelectorAll(`option[value='${ s4val }']`).item(0).textContent;
+					console.log(`Found team ${name}`);
+					resolve({name: name, lead: lead, second: second, vice: vice, skip: skip, league: league});
 				});
 			});
 		});
@@ -327,16 +329,17 @@ class TeamScraper {
 		this.leagueIds = {};
 		return Q.Promise<void>((resolve, reject) => {
 			request.get(`${site}/administrator/index.php?task=teams&option=com_curling`, {headers: this.headers}, (error: any, response: http.IncomingMessage, body: any) => {
-				jsdom.env(body, ["http://code.jquery.com/jquery.min.js"], (errors: Error[], window: any) => {
-					const $ = window.$;
-					const $options = $("select[name=league_id] option");
-					$options.each((index: number, element: Element) => {
-						const optionVal = $(element).attr("value");
+				jsdom.env(body, [], (errors: Error[], window: any) => {
+					const document = window.document;
+					const options = document.querySelectorAll("select[name=league_id] option");
+					for (let i = 0; i < options.length; ++i) {
+						const element = options.item(i);
+						const optionVal = element.getAttribute("value");
 						if (optionVal === "0") {
-							return true; // continue;
+							continue; // continue;
 						}
-						this.leagueIds[$(element).text()] = parseInt(optionVal, 10);
-					});
+						this.leagueIds[element.textContent] = parseInt(optionVal, 10);
+					}
 					console.log("Team ids found.");
 					resolve(null);
 				});
