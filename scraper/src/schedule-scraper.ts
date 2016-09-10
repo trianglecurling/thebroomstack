@@ -208,18 +208,24 @@ const leagues: League[] = [
 		day: 4,
 		hour: 19,
 		minute: 0
+	},
+	{
+		name: "Saturday Instructional - Fall 2016",
+		day: 6,
+		hour: 20,
+		minute: 0
 	}
 ];
 
-function getNextLeague(from: Date = null): League {
-	if (!from) {
+function getNextLeague(fromDate: Date = null): League {
+	if (!fromDate) {
 		// 3 hours in the past.
 		const now = new Date(new Date().getTime() - 180 * 60 * 1000);
 		return getNextLeague(now);
 	}
 
 	// This is me being super lazy.
-	let current = from;
+	let current = fromDate;
 	for (let i = 0; i < 525600 /*1 year*/; ++i) {
 		const minute = current.getMinutes();
 		const hour = current.getHours();
@@ -294,18 +300,20 @@ class TeamScraper {
 			console.log("Getting requested team...");
 			request.get(url, {headers: this.headers}, (error: any, response: http.IncomingMessage, body: any) => {
 				jsdom.env(body, ["http://code.jquery.com/jquery.min.js"], (errors: Error[], window: any) => {
-					const $ = window.$;
-					const name = $("input[name=team_name]").val();
-					const s1val = $("select").eq(1).val();
-					const s2val = $("select").eq(2).val();
-					const s3val = $("select").eq(3).val();
-					const s4val = $("select").eq(4).val();
-					const skip = s1val === "0" ? null : $(`option[value=${ s1val }]`).eq(0).text();
-					const vice = s2val === "0" ? null : $(`option[value=${ s2val }]`).eq(0).text();
-					const second = s3val === "0" ? null : $(`option[value=${ s3val }]`).eq(0).text();
-					const lead = s4val === "0" ? null : $(`option[value=${ s4val }]`).eq(0).text();
-					console.log(`Found team ${name}`);
-					resolve({name: name, lead: lead, second: second, vice: vice, skip: skip, league: league});
+					window.setTimeout(() => {
+						const $ = window.$;
+						const name = $("input[name=team_name]").val();
+						const s1val = $("select").eq(1).val();
+						const s2val = $("select").eq(2).val();
+						const s3val = $("select").eq(3).val();
+						const s4val = $("select").eq(4).val();
+						const skip = s1val === "0" ? null : $(`option[value=${ s1val }]`).eq(0).text();
+						const vice = s2val === "0" ? null : $(`option[value=${ s2val }]`).eq(0).text();
+						const second = s3val === "0" ? null : $(`option[value=${ s3val }]`).eq(0).text();
+						const lead = s4val === "0" ? null : $(`option[value=${ s4val }]`).eq(0).text();
+						console.log(`Found team ${name}`);
+						resolve({name: name, lead: lead, second: second, vice: vice, skip: skip, league: league});
+					}, 2000); // idk, wait for stupid race conditions?
 				});
 			});
 		});

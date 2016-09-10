@@ -1,6 +1,7 @@
 {
 	"compilerOptions": {
 		"module": "commonjs",
+		"moduleResolution": "node",
 		"noImplicitAny": true,
 		"removeComments": true,
 		"outDir": "build/Release/",
@@ -8,8 +9,7 @@
 		"target": "es5"
 	},
 	"files": [
-		"src/schedule-scraper.ts",
-		"typings/main.d.ts"
+		"src/schedule-scraper.ts"
 		/*"typings/browser.d.ts"*/
 	]
 }

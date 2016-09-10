@@ -155,15 +155,21 @@ var leagues = [
         day: 4,
         hour: 19,
         minute: 0
+    },
+    {
+        name: "Saturday Instructional - Fall 2016",
+        day: 6,
+        hour: 20,
+        minute: 0
     }
 ];
-function getNextLeague(from) {
-    if (from === void 0) { from = null; }
-    if (!from) {
+function getNextLeague(fromDate) {
+    if (fromDate === void 0) { fromDate = null; }
+    if (!fromDate) {
         var now = new Date(new Date().getTime() - 180 * 60 * 1000);
         return getNextLeague(now);
     }
-    var current = from;
+    var current = fromDate;
     for (var i = 0; i < 525600; ++i) {
         var minute = current.getMinutes();
         var hour = current.getHours();
