@@ -149,7 +149,7 @@ export class Dispatcher {
 			host: nodeUrl.host,
 			hostname: nodeUrl.hostname,
 			subdomain: subdomain,
-			port: nodeUrl.port && parseInt(nodeUrl.port),
+			port: nodeUrl.port ? parseInt(nodeUrl.port) : undefined,
 			path: nodeUrl.pathname,
 			query: nodeUrl.search,
 			controller: controller,

@@ -1,0 +1,111 @@
+[
+	{
+		"id": "home",
+		"label": "Home",
+		"action": "navigate",
+		"uri": "/"
+	},
+	{
+		"id": "tryCurling",
+		"label": "Try curling!",
+		"childItems": [
+			{
+				"id": "tryCurling",
+				"label": "Try curling!",
+				"action": "navigate",
+				"uri": "/try-curling",
+				"selected": true
+			},
+			{
+				"id": "saturdayLeague",
+				"label": "Saturday instructional league",
+				"action": "navigate",
+				"uri": "/saturday-instructional"
+			}
+		]
+	},
+	{
+		"id": "leagues",
+		"label": "Leagues",
+		"childItems": [
+			{
+				"id": "leagueInformation",
+				"label": "League information",
+				"action": "navigate",
+				"uri": "/league-info"
+			},
+			{
+				"id": "membership",
+				"label": "Membership",
+				"action": "navigate",
+				"uri": "/membership"
+			}
+		]
+	},
+	{
+		"id": "events",
+		"label": "Events & bonspiels",
+		"childItems": [
+			{
+				"id": "calendar",
+				"label": "Club calendar",
+				"action": "navigate",
+				"uri": "/calendar"
+			},
+			{
+				"id": "bonspiels",
+				"label": "Bonspiels",
+				"action": "navigate",
+				"uri": "/bonspiels"
+			},
+			{
+				"id": "eventListings",
+				"label": "Event listings",
+				"action": "navigate",
+				"uri": "/events"
+			},
+			{
+				"id": "curlalina",
+				"label": "Curlalina",
+				"action": "navigate",
+				"uri": "/curlalina"
+			}
+		]
+	},
+	{
+		"id": "about",
+		"label": "About us",
+		"childItems": [
+			{
+				"id": "contact",
+				"label": "Contact information",
+				"action": "navigate",
+				"uri": "/contact"
+			},
+			{
+				"id": "donate",
+				"label": "Donate",
+				"action": "navigate",
+				"uri": "/donate"
+			},
+			{
+				"id": "board",
+				"label": "Board of directors",
+				"action": "navigate",
+				"uri": "/board"
+			},
+			{
+				"id": "links",
+				"label": "Curling links",
+				"action": "navigate",
+				"uri": "/links"
+			}
+		]
+	},
+	{
+		"id": "groups",
+		"label": "Group events & rentals",
+		"action": "navigate",
+		"uri": "/groups"
+	}
+]

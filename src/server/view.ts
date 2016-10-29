@@ -6,6 +6,7 @@ import * as qfs from "./qfs";
 import * as path from "path";
 import { HttpError } from "./utils/errors";
 import { hashCode } from "./utils/string";
+import { isDevEnv } from "./utils/core";
 
 export abstract class BaseView {
 	constructor(protected ctx: koa.Context) {
@@ -100,7 +101,7 @@ export class HandlebarsView extends TemplatedView {
 	public async render(layoutName: string, replacements: { [find: string]: any } = {}) {
 		const templateCache = TemplateCache.getInstance();
 		let templateDelegate = templateCache.getTemplate(layoutName);
-		if (!templateDelegate) {
+		if (!templateDelegate || isDevEnv()) {
 			const templateStr = await super.getTemplateString(layoutName);
 			templateDelegate = handlebars.compile(templateStr);
 			templateCache.setTemplate(layoutName, templateDelegate);

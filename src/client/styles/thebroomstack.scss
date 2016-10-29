@@ -2,7 +2,32 @@
 @import '_normalize.scss';
 @import '_base.scss';
 
+
 body {
 	color: $black;
 	background-color: #eee;
+}
+
+section {
+	margin: 1em;
+	padding: 0.5em;
+
+	@include set-container(transparent);
+
+	&.info {
+		@include set-container($info-color);
+	}
+	&.success {
+		@include set-container($success-color);
+	}
+	&.failure {
+		@include set-container($failure-color);
+	}
+	&.warning {
+		@include set-container($warning-color);
+	}
+}
+
+li.selected {
+	font-weight: bold;
 }

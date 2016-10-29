@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "ts-loader": "^0.9.5"
+  }
+}

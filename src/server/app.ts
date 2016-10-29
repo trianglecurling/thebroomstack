@@ -1,22 +1,25 @@
+//import { devMiddleware, hotMiddleware } from 'koa-webpack-middleware';
+import { getBroomstackOverrides } from "./overrides";
+import { HttpError } from "./utils/errors";
+import { PatService } from "./pat";
+import { Webpack } from "webpack";
 import * as bodyParser from "koa-bodyparser";
 import * as bootstrap from "./bootstrap";
 import * as Constants from "./constants";
+import * as ctxUtils from "./utils/context";
 import * as dispatcher from "./dispatcher";
+import * as errorHandling from "./errors";
 import * as jwt from "jsonwebtoken";
 import * as koa from "koa";
 import * as koaRouter from "koa-router";
 import * as mssql from "mssql";
-import { getBroomstackOverrides } from "./overrides";
-import { PatService } from "./pat";
 import * as Q from "q";
 import * as sql from "./sql";
 import * as tokenValidator from "./tokenvalidator";
-import * as ctxUtils from "./utils/context";
-import { HttpError } from "./utils/errors";
 
 declare module "koa" {
 	interface Request {
-		body?: { [key: string]: any } | string;
+		body: any;
 	}
 
 	interface IMiddleware {
@@ -74,6 +77,7 @@ class TheBroomStack {
 	}
 
 	private async setupMiddleware() {
+		this.koa.use(errorHandling.getErrorHandler());
 		this.koa.use(this.getContextVerifier());
 		this.koa.use(<koa.IMiddleware>getBroomstackOverrides().routes());
 		this.koa.use(bodyParser());

@@ -1,2 +1,38 @@
 $black: #222;
 $white: #fff;
+$dark-gray: #555;
+$light-gray: #ccc;
+$subtle-gray: #eee;
+$green: #37ba08;
+$red: #c7502b;
+$yellow: #fadd2d;
+
+$brand-blue: #0970ba;
+$brand-red: #ee2027;
+$brand-yellow: #c8d100;
+
+$text-color: $black;
+$text-color-muted: $dark-gray;
+
+$link-color: $brand-blue;
+
+$background-color: $subtle-gray;
+
+$success-color: $green;
+$failure-color: $red;
+$warning-color: $yellow;
+$info-color: $brand-blue;
+
+@function text-color-for-background($color) {
+	@if (lightness($color) > 50) {
+		@return $black;
+	}
+	@return $white;
+}
+
+@mixin set-container($color) {
+	$bg-color: change-color($color, $lightness: 85%, $saturation: min(saturation($color), 60%));
+	background-color: $bg-color;
+	color: text-color-for-background($bg-color);
+	box-shadow: 1px 1px 2px 0.5px change-color($color, $lightness: 15%, $alpha: 0.5);
+}

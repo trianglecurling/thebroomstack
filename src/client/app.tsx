@@ -1,5 +1,15 @@
 require("./styles/thebroomstack.scss");
+require("./styles/lib/ionicons.scss");
+
+import * as Navigation from "./navigation";
 import * as _ from "lodash";
+import * as React from "react";
+import * as ReactDOM from "react-dom";
+
+export var NavigationData = require<Navigation.NavigationItem[]>("./data/navigation.json");
+setTimeout(() => {
+	NavigationData[2].childItems![1].selected = true;
+}, 5000);
 
 export class TheBroomStack {
 	public start() {
@@ -9,7 +19,7 @@ export class TheBroomStack {
 
 	public initEventListeners() {
 		document.addEventListener("DOMContentLoaded", () => {
-
+			ReactDOM.render(<Navigation.Navigation items={NavigationData} />, document.getElementById("app"));
 		});
 	}
 
