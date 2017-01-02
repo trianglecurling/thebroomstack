@@ -2,7 +2,7 @@
 	"compilerOptions": {
 		"forceConsistentCasingInFileNames": true,
 		"jsx": "react",
-		"lib": ["es2015", "dom"],
+		"lib": ["es2015", "dom", "es2015.promise"],
 		"module": "commonjs",
 		"noFallthroughCasesInSwitch": true,
 		"noImplicitAny": true,

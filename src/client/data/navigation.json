@@ -1,7 +1,7 @@
 [
 	{
 		"id": "home",
-		"label": "Home",
+		"label": "Homes",
 		"action": "navigate",
 		"uri": "/"
 	},

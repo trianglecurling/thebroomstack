@@ -2,19 +2,19 @@ var autoprefixer = require("autoprefixer");
 var webpack = require("webpack");
 
 var TsConfigPathsPlugin = require('awesome-typescript-loader').TsConfigPathsPlugin;
-var ClosureCompilerPlugin = require('webpack-closure-compiler');
+//var ClosureCompilerPlugin = require('webpack-closure-compiler');
 
 module.exports = {
-	entry: "./src/client/app.tsx",
+	entry: ["./src/client/app.tsx"],
 	output: {
-		path: "./build/release/client/public",
+		path: __dirname + "/build/release/client/public",
 		publicPath: "http://localhost:8080/",
 		filename: "scripts/thebroomstack.js"
 	},
 	resolve: {
 		extensions: [".webpack.js", ".web.js", ".ts", ".tsx", ".js"],
 		plugins: [
-			new TsConfigPathsPlugin({tsconfig: "./src/client/tsconfig.json"})
+			new TsConfigPathsPlugin({tsconfig: __dirname + "/src/client/tsconfig.json"})
 		]
 	},
 	module: {
@@ -22,10 +22,12 @@ module.exports = {
 			{
 				test: /\.tsx?$/,
 				loader: "awesome-typescript-loader",
-				query: { tsconfig: "./src/client/tsconfig.json" }
+				query: {
+					configFileName: __dirname + "/src/client/tsconfig.json"
+				}
 			},
 			{
-				test:   /\.css$/,
+				test: /\.css$/,
 				loader: ["style-loader", "css-loader", "postcss-loader"]
 			},
 			{
@@ -51,13 +53,6 @@ module.exports = {
 				]
 			}
 		}),
-		// new ClosureCompilerPlugin({
-		// 	compiler: {
-		// 		language_in: 'ECMASCRIPT5',
-		// 		language_out: 'ECMASCRIPT5',
-		// 		compilation_level: 'ADVANCED'
-		// 	},
-		// 	concurrency: 3,
-		// })
+		new webpack.HotModuleReplacementPlugin()
 	]
 };

@@ -4,7 +4,6 @@ import { HttpError, NotAuthorizedError, ForbiddenError, NotFoundError } from "./
 export function getErrorHandler() {
 	return async (ctx: koa.Context, next: Function) => {
 		try {
-			console.log("foo");
 			await next();
 		} catch (err) {
 			console.log("foobar");
