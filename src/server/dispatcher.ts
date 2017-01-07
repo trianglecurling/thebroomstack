@@ -5,6 +5,7 @@ import * as path from "path";
 import * as qfs from "./qfs";
 import * as url from "url";
 import { HttpError } from "./utils/errors";
+import * as foo from "./controller/HomeController";
 
 export interface UrlParts {
 	full: string;
@@ -38,6 +39,7 @@ export interface DispatcherOptions {
 declare module "koa" {
 	interface Context {
 		parsedUrl: UrlParts;
+		effectiveAction?: string;
 	}
 }
 
@@ -56,26 +58,36 @@ export class Dispatcher {
 			const parsedUrl = this.parseUrl(ctx.request!.header.host + ctx.request!.url);
 			ctx.parsedUrl = parsedUrl;
 			const controller = await this.controllerFactory(parsedUrl.controller, ctx);
-			await controller.dispatchAction(parsedUrl.action);
+			await controller.dispatchAction(ctx.effectiveAction ? ctx.effectiveAction : parsedUrl.action);
 			await next();
 		};
 	}
 
 	private async controllerFactory(controllerName: string, ctx: koa.Context): Promise<controller.Controller> {
-		const controllerClass = this.controllerClassName(controllerName);
-		const controllerPath = path.resolve(path.join(this.config.controllersPath, controllerClass + ".js"));
-		if (await qfs.exists(controllerPath)) {
-			const controllerModule = require(controllerPath);
+		const controllerClass = this.controllerClassName(ctx.parsedUrl.apiRoute ? controllerName : this.config.defaultController);
 
-			if (controllerModule[controllerClass]) {
-				const controller = new controllerModule[controllerClass](ctx);
-				return controller;
-			} else {
-				throw new Error(`No exported member ${controllerClass} in ${controllerPath}.`);
-			}
+		const controllerModule = require("./controller/" + controllerClass);
+
+		if (controllerModule[controllerClass]) {
+			const controller = new controllerModule[controllerClass](ctx);
+			return controller;
 		} else {
-			throw new Error("Could not find controller class: " + controllerPath);
+			if (ctx.parsedUrl.apiRoute || controllerName === this.config.defaultController) {
+				throw new Error(`No exported member ${controllerClass} in ${controllerClass}.`);
+			} else {
+				ctx.effectiveAction = this.config.defaultAction;
+				return this.controllerFactory(this.config.defaultController, ctx);
+			}
 		}
+
+		// } else {
+		// 	if (ctx.parsedUrl.apiRoute || controllerName === this.config.defaultController) {
+		// 		throw new Error("Could not find controller class: " + controllerPath);
+		// 	} else {
+		// 		ctx.effectiveAction = this.config.defaultAction;
+		// 		return this.controllerFactory(this.config.defaultController, ctx);
+		// 	}
+		// }
 	}
 
 	private controllerClassName(controllerName: string) {

@@ -41,7 +41,8 @@ export class JSONView extends StringView {
 
 export class TemplatedView extends StringView {
 	protected async getTemplateString(name: string) {
-		return qfs.readFile(this.getTemplatePath(name));
+		const templatePath = path.resolve(path.join(__dirname, "../../", this.getTemplatePath(name)));
+		return qfs.readFile(templatePath);
 	}
 
 	protected getTemplatePath(name: string) {
@@ -103,7 +104,9 @@ export class HandlebarsView extends TemplatedView {
 		let templateDelegate = templateCache.getTemplate(layoutName);
 		if (!templateDelegate || isDevEnv()) {
 			const templateStr = await super.getTemplateString(layoutName);
-			templateDelegate = handlebars.compile(templateStr);
+			templateDelegate = handlebars.compile(templateStr, {
+				noEscape: true
+			});
 			templateCache.setTemplate(layoutName, templateDelegate);
 			templateCache.setTemplate(hashCode(templateStr), templateDelegate);
 		}

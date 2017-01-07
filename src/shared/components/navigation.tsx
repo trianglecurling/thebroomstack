@@ -1,5 +1,7 @@
 import * as React from "react";
 
+import { Link } from 'react-router'
+
 export interface NavigationItem {
 	id: string;
 	label: string;
@@ -30,16 +32,21 @@ export class NavigationList extends React.Component<{items: NavigationItem[]}, {
 
 export class NavigationItem extends React.Component<NavigationItem, {selected: boolean}> {
 	public render() {
-		let contents: JSX.Element;
+		let label = <span className="link-no-ref">{this.props.label}</span>;
+		let text = label;
+
+		if (this.props.uri) {
+			text = <Link to={this.props.uri} activeClassName="selected" onlyActiveOnIndex={true}>{label}</Link>;
+		}
+
+		let contents = text;
 		if (this.props.childItems) {
 			contents = (
 				<div>
-					<span>{this.props.label}</span>
+					{text}
 					<NavigationList items={this.props.childItems} />
 				</div>
 			);
-		} else {
-			contents = <a href={this.props.uri}>{this.props.label}</a>;
 		}
 		return (
 			<li className={this.props.selected ? "selected" : ""}>

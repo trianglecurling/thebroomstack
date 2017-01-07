@@ -13,7 +13,6 @@ import * as jwt from "jsonwebtoken";
 import * as koa from "koa";
 import * as koaRouter from "koa-router";
 import * as mssql from "mssql";
-import * as Q from "q";
 import * as sql from "./sql";
 import * as tokenValidator from "./tokenvalidator";
 
@@ -60,7 +59,7 @@ class TheBroomStack {
 
 		({ public: this._publicKey, private: this._privateKey } = keys);
 		this._koaApp = new koa();
-		this._router = new koaRouter();
+		// this._router = new koaRouter();
 		this.authenticate = tokenValidator(this.publicKey);
 		//this.setupRoutes();
 		await this.setupMiddleware();

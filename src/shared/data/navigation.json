@@ -13,8 +13,7 @@
 				"id": "tryCurling",
 				"label": "Try curling!",
 				"action": "navigate",
-				"uri": "/try-curling",
-				"selected": true
+				"uri": "/try-curling"
 			},
 			{
 				"id": "saturdayLeague",
@@ -75,6 +74,7 @@
 	{
 		"id": "about",
 		"label": "About us",
+		"uri": "/about",
 		"childItems": [
 			{
 				"id": "contact",

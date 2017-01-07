@@ -6,7 +6,6 @@ export function getErrorHandler() {
 		try {
 			await next();
 		} catch (err) {
-			console.log("foobar");
 			if (err instanceof HttpError) {
 				ctx.status = err.getStatusCode();
 				ctx.body = err.message;
