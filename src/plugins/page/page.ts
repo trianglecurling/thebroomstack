@@ -3,9 +3,6 @@ import { FastifyPluginAsync, FastifyReply } from "fastify";
 import { CrudPlugin } from "./crud/crud";
 import PointOfView from "point-of-view";
 import Ejs from "ejs";
-import webpack from "webpack";
-import webpackDevMiddleware from "webpack-dev-middleware";
-import webpackHotMiddleware from "webpack-hot-middleware";
 import fp from "fastify-plugin";
 
 export const PagePlugin: FastifyPluginAsync = fp(async (fastify, opts) => {
