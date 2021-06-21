@@ -427,8 +427,8 @@ export default fp(async (fastify, opts) => {
 	Team.belongsTo(Player, { as: "Coach" });
 	Team.belongsTo(Player, { as: "Doubles1" });
 	Team.belongsTo(Player, { as: "Doubles2" });
-	User.belongsToMany(DrawTime, { through: "SpareCandidates" });
-	DrawTime.belongsToMany(User, { through: "SpareCandidates" });
+	User.belongsToMany(DrawTime, { through: "SpareCandidate" });
+	DrawTime.belongsToMany(User, { through: "SpareCandidate" });
 
 	await fastify.sequelize.sync();
 });

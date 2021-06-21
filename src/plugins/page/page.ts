@@ -14,9 +14,9 @@ export const PagePlugin: FastifyPluginAsync = fp(async (fastify, opts) => {
 	fastify.decorateReply("pageData", undefined);
 	fastify.addHook("onRequest", async (request, reply) => {
 		reply.pageData = {
-			scripts: ["/public/js/bundle.js"],
+			scripts: ["/public/js/main.js"],
 			moduleScripts: [],
-			styleSheets: [],
+			styleSheets: ["/public/css/main.css"],
 			data: {},
 			pageTitle: fastify.appName,
 		};

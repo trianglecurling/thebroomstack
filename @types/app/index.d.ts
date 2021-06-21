@@ -15,7 +15,7 @@ declare module "app-core" {
 			isApiRequest: boolean;
 		}
 		interface FastifyReply {
-			pageData?: PageData;
+			pageData: PageData;
 			renderTemplate: (
 				relativeTemplatePath?: string
 			) => Promise<FastifyReply>;

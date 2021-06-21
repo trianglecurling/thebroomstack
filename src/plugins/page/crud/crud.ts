@@ -2,6 +2,17 @@ import { FastifyPluginAsync } from "fastify";
 import { Association, ModelCtor } from "sequelize/types";
 
 export const CrudPlugin: FastifyPluginAsync = async (fastify, opts) => {
+	fastify.addHook("preHandler", async (request, reply) => {
+		const allModels = Object.keys(fastify.sequelize.models);
+		allModels.sort((a, b) => a.localeCompare(b));
+		reply.pageData.data["models"] = allModels; // serializer.serialize(users[0]);
+	});
+	fastify.get("/", async (request, reply) => {
+		const models = Object.keys(fastify.sequelize.models);
+		Object.assign(reply.pageData?.data, { models });
+		return reply.renderTemplate();
+	});
+
 	fastify.get<{ Params: { model: string } }>(
 		"/:model",
 		async (request, reply) => {
@@ -9,8 +20,8 @@ export const CrudPlugin: FastifyPluginAsync = async (fastify, opts) => {
 			if (model) {
 				const items = await model.findAll();
 				const associations = getAssociations(model);
-                Object.assign(reply.pageData?.data, {items, associations});
-                return reply.renderTemplate();
+				Object.assign(reply.pageData?.data, { items, associations });
+				return reply.renderTemplate();
 			}
 		}
 	);

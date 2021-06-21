@@ -3,15 +3,16 @@ const path = require("path");
 const ReactRefreshWebpackPlugin = require("@pmmmwh/react-refresh-webpack-plugin");
 const webpack = require("webpack");
 const ReactRefreshTypeScript = require("react-refresh-typescript");
+const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 
 const isDevelopment = process.env.NODE_ENV !== "production";
-
 module.exports = {
 	mode: isDevelopment ? "development" : "production",
 	entry: [
 		"webpack-hot-middleware/client?path=/__webpack_hmr",
 		path.join(__dirname, "script", "index.tsx"),
 	],
+	devtool: "source-map",
 	module: {
 		rules: [
 			{
@@ -30,6 +31,10 @@ module.exports = {
 					},
 				],
 			},
+			{
+				test: /\.css$/i,
+				use: [MiniCssExtractPlugin.loader, "css-loader"],
+			},
 		],
 	},
 
@@ -37,12 +42,12 @@ module.exports = {
 		extensions: [".tsx", ".ts", ".js", ".jsx"],
 	},
 	output: {
-		filename: "bundle.js",
+		filename: "main.js",
 		path: path.join(__dirname, "..", "..", "..", "..", "public", "js"),
 		publicPath: "http://localhost:8000/",
 	},
 	plugins: [
-		new webpack.HotModuleReplacementPlugin(),
+		new MiniCssExtractPlugin({ filename: "../css/[name].css" }),
 		isDevelopment && new webpack.HotModuleReplacementPlugin(),
 		isDevelopment && new ReactRefreshWebpackPlugin(),
 	].filter(Boolean),
