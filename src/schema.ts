@@ -387,11 +387,11 @@ export default fp(async (fastify, opts) => {
 	// Users, Leagues, and Teams
 	User.belongsToMany(League, {
 		through: LeagueMembership,
-		foreignKey: "userId",
+		foreignKey: "UserId",
 	});
 	League.belongsToMany(User, {
 		through: LeagueMembership,
-		foreignKey: "leagueId",
+		foreignKey: "LeagueId",
 	});
 	League.belongsToMany(Team, { through: "LeagueTeam" });
 	Team.belongsToMany(League, { through: "LeagueTeam" });

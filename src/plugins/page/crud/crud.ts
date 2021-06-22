@@ -20,7 +20,9 @@ export const CrudPlugin: FastifyPluginAsync = async (fastify, opts) => {
 			if (model) {
 				const items = await model.findAll();
 				const associations = getAssociations(model);
-				Object.assign(reply.pageData?.data, { items, associations });
+                const modelName = model.name;
+                const modelNamePlural = model.tableName;
+				Object.assign(reply.pageData?.data, { modelName, modelNamePlural, items, associations });
 				return reply.renderTemplate();
 			}
 		}
@@ -36,7 +38,7 @@ function getAssociations(model: ModelCtor<any>) {
 	const associations: SerializableAssociation[] = [];
 	for (const assoc of Object.values(model.associations)) {
 		const serializable: SerializableAssociation = {
-			as: assoc.as,
+			as: assoc.target.name,
 			associationType: assoc.associationType,
 			isSelfAssociation: assoc.isSelfAssociation,
 			isSingleAssociation: assoc.isSingleAssociation,
@@ -45,9 +47,9 @@ function getAssociations(model: ModelCtor<any>) {
 			foreignKey: assoc.foreignKey,
 			identifier: assoc.identifier,
 		};
-		const joinTableName: string | undefined = (assoc as any)[
-			"combinedName"
-		];
+
+		const joinTableName: string | undefined = (assoc as any)["throughModel"]
+			?.name;
 		if (joinTableName) {
 			serializable.through = joinTableName;
 		}
