@@ -13,6 +13,8 @@ import webpack from "webpack";
 import webpackDevMiddleware from "webpack-dev-middleware";
 import webpackHotMiddleware from "webpack-hot-middleware";
 
+import { initDB } from "./dataModel/database";
+
 const webpackConfig = require("./plugins/page/client/webpack.config.js");
 
 const compiler = webpack(webpackConfig);
