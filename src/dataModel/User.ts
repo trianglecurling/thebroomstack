@@ -23,7 +23,7 @@ export class User implements IDataObject {
 
 	@(t.array(() => Invoice).backReference()) public invoices?: Invoice[];
 	@(t.type(() => Address).reference()) public address?: Address;
-    
+
 	@(t.type(() => EmergencyContact).reference())
 	public emergencyContact?: EmergencyContact;
 

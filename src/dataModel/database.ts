@@ -25,7 +25,7 @@ import { SpareCandidate } from "./joinerObjects/SpareCandidate";
 import { LeagueTeam } from "./joinerObjects/LeagueTeam";
 import { PlayerClub } from "./joinerObjects/PlayerClub";
 
-export async function initDB() {
+export async function initDB(dangerouslyMigrate: boolean = false) {
 	const dbPath = path.join(__dirname, "..", "..", "data", "db2.sqlite");
 	const database = new Database(new SQLiteDatabaseAdapter(dbPath), [
 		// Data objects
@@ -53,5 +53,8 @@ export async function initDB() {
 		LeagueTeam,
 		PlayerClub,
 	]);
-	database.migrate();
+    if (dangerouslyMigrate) {
+        await database.migrate();
+    }
+	return database;
 }

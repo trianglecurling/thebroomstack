@@ -3,12 +3,16 @@ import { Association, ModelCtor } from "sequelize/types";
 
 export const CrudPlugin: FastifyPluginAsync = async (fastify, opts) => {
 	fastify.addHook("preHandler", async (request, reply) => {
-		const allModels = Object.keys(fastify.sequelize.models);
+		const allModels = Object.keys(
+			Array.from(fastify.database.entities).map((e) => e.getName())
+		);
 		allModels.sort((a, b) => a.localeCompare(b));
 		reply.pageData.data["models"] = allModels; // serializer.serialize(users[0]);
 	});
 	fastify.get("/", async (request, reply) => {
-		const models = Object.keys(fastify.sequelize.models);
+		const models = Object.keys(
+			Array.from(fastify.database.entities).map((e) => e.getName())
+		);
 		Object.assign(reply.pageData?.data, { models });
 		return reply.renderTemplate();
 	});
@@ -16,15 +20,21 @@ export const CrudPlugin: FastifyPluginAsync = async (fastify, opts) => {
 	fastify.get<{ Params: { model: string } }>(
 		"/:model",
 		async (request, reply) => {
-			const model = fastify.sequelize.model(request.params.model);
-			if (model) {
-				const items = await model.findAll();
-				const associations = getAssociations(model);
-                const modelName = model.name;
-                const modelNamePlural = model.tableName;
-				Object.assign(reply.pageData?.data, { modelName, modelNamePlural, items, associations });
-				return reply.renderTemplate();
-			}
+			// const model = fastify.sequelize.model(request.params.model);
+			// if (model) {
+			// 	const items = await model.findAll();
+			// 	const associations = getAssociations(model);
+			// 	const modelName = model.name;
+			// 	const modelNamePlural = model.tableName;
+			// 	Object.assign(reply.pageData?.data, {
+			// 		modelName,
+			// 		modelNamePlural,
+			// 		items,
+			// 		associations,
+			// 	});
+			// 	return reply.renderTemplate();
+			// }
+			return reply.renderTemplate();
 		}
 	);
 };
