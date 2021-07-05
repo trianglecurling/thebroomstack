@@ -6,5 +6,5 @@ export const DrawTimesController: FastifyPluginAsync = async (
 	fastify,
 	opts
 ) => {
-	fastify.register(CrudComponent, { entityName: "drawtime" });
+	fastify.register(CrudComponent, { entityName: "drawTime" });
 };

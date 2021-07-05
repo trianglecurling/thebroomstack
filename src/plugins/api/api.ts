@@ -2,69 +2,59 @@ import { FastifyPluginAsync } from "fastify";
 import { Address } from "../../dataModel/Address";
 // import { User, Address } from "../../schema";
 import { User } from "../../dataModel/User";
-import { SeasonsController } from "./controllers/seasonsController";
-import { LeaguesController } from "./controllers/leaguesController";
-import { LeagueFormatsController } from "./controllers/leagueFormatsController";
-import { DrawsController } from "./controllers/drawsController";
+import { AddressesController } from "./controllers/addressesController";
+import { ClubsController } from "./controllers/clubsController";
 import { DivisionsController } from "./controllers/divisionsController";
+import { DrawsController } from "./controllers/drawsController";
+import { DrawTimesController } from "./controllers/drawTimesController";
+import { EmergencyContactsController } from "./controllers/emergencyContactsController";
+import { InvoicesController } from "./controllers/invoicesController";
+import { LeagueFormatsController } from "./controllers/leagueFormatsController";
+import { LeagueMembershipsController } from "./controllers/leagueMembershipsController";
+import { LeaguesController } from "./controllers/leaguesController";
+import { LeagueTeamsController } from "./controllers/leagueTeamsController";
+import { MatchesController } from "./controllers/matchesController";
+import { ParentContactsController } from "./controllers/parentContactsController";
+import { PlayerClubsController } from "./controllers/playerClubsController";
+import { PlayersController } from "./controllers/playersController";
+import { SeasonsController } from "./controllers/seasonsController";
+import { SheetsController } from "./controllers/sheetsController";
+import { SpareCandidatesController } from "./controllers/spareCandidatesController";
+import { TeamsController } from "./controllers/teamsController";
+import { UserParentContactsController } from "./controllers/userParentContactsController";
+import { UsersController } from "./controllers/usersController";
+import { EntitiesController } from "./controllers/entitiesController";
 
 export const ApiPlugin: FastifyPluginAsync = async (fastify, opts) => {
 	fastify.addHook("onRequest", async (request, reply) => {
 		request.isApiRequest = true;
 	});
-	fastify.register(SeasonsController, { prefix: "seasons" });
-	fastify.register(LeaguesController, { prefix: "leagues" });
-	fastify.register(LeagueFormatsController, { prefix: "leagueFormats" });
-	fastify.register(DrawsController, { prefix: "draws" });
-	fastify.register(DivisionsController, { prefix: "divisions" });
-
-	fastify.get("/user", async (request, reply) => {
-		//User.destroy({ truncate: true });
-		const user = new User(
-			"John Smith",
-			"Jack",
-			"john@smith.com",
-			new Date(2015, 8, 1),
-			new Date(2015, 8, 1),
-			new Date(1984, 6, 24),
-			"123456789"
-		);
-		const address = new Address(
-			"123 Anywhere St.",
-			"Middletown",
-			"Kansas",
-			"62231"
-		);
-		address.line2 = "#234";
-		user.address = address;
-		user.ccmUserName = "jsjack";
-		user.gender = "male";
-		user.occupation = "Software engineer";
-		await fastify.database.persist(user, address);
-		reply.send({ success: "Success!" });
-
-		// const user = User.build(
-		// 	{
-		// 		fullName: "John Smith",
-		// 		friendlyName: "Jack",
-		// 		ccmUserName: "jsjack",
-		// 		email: "john@smith.com",
-		// 		memberSince: new Date(2015, 8, 1),
-		// 		curledSince: new Date(2015, 8, 1),
-		// 		dateOfBirth: new Date(1984, 6, 24),
-		// 		phone: "2813775337",
-		// 		gender: "male",
-		// 		occupation: "Software Engineer",
-		// 		Address: {
-		// 			line1: "123 Anywhere St",
-		// 			city: "Raleigh",
-		// 			state: "NC",
-		// 			zip: "27626",
-		// 		},
-		// 	},
-		// 	{ include: [Address] }
-		// );
-		// await user.save();
-		// return { test: "foo!" };
+	await fastify.register(DivisionsController, { prefix: "divisions" });
+	await fastify.register(DrawsController, { prefix: "draws" });
+	await fastify.register(LeagueFormatsController, { prefix: "leagueFormats" });
+	await fastify.register(LeaguesController, { prefix: "leagues" });
+	await fastify.register(SeasonsController, { prefix: "seasons" });
+	await fastify.register(AddressesController, { prefix: "addresses" });
+	await fastify.register(ClubsController, { prefix: "clubs" });
+	await fastify.register(DrawTimesController, { prefix: "drawTimes" });
+	await fastify.register(EmergencyContactsController, {
+		prefix: "emergencyContacts",
 	});
+	await fastify.register(InvoicesController, { prefix: "invoices" });
+	await fastify.register(LeagueMembershipsController, {
+		prefix: "leagueMemberships",
+	});
+	await fastify.register(LeagueTeamsController, { prefix: "leagueTeams" });
+	await fastify.register(MatchesController, { prefix: "matches" });
+	await fastify.register(ParentContactsController, { prefix: "parentContacts" });
+	await fastify.register(PlayerClubsController, { prefix: "playerClubs" });
+	await fastify.register(PlayersController, { prefix: "players" });
+	await fastify.register(SheetsController, { prefix: "sheets" });
+	await fastify.register(SpareCandidatesController, { prefix: "spareCandidates" });
+	await fastify.register(TeamsController, { prefix: "teams" });
+	await fastify.register(UserParentContactsController, {
+		prefix: "userParentContacts",
+	});
+	await fastify.register(UsersController, { prefix: "users" });
+	await fastify.register(EntitiesController, { prefix: "entities" });
 };
