@@ -3,12 +3,20 @@ import { Address } from "../../dataModel/Address";
 // import { User, Address } from "../../schema";
 import { User } from "../../dataModel/User";
 import { SeasonsController } from "./controllers/seasonsController";
+import { LeaguesController } from "./controllers/leaguesController";
+import { LeagueFormatsController } from "./controllers/leagueFormatsController";
+import { DrawsController } from "./controllers/drawsController";
+import { DivisionsController } from "./controllers/divisionsController";
 
 export const ApiPlugin: FastifyPluginAsync = async (fastify, opts) => {
 	fastify.addHook("onRequest", async (request, reply) => {
 		request.isApiRequest = true;
 	});
 	fastify.register(SeasonsController, { prefix: "seasons" });
+	fastify.register(LeaguesController, { prefix: "leagues" });
+	fastify.register(LeagueFormatsController, { prefix: "leagueFormats" });
+    fastify.register(DrawsController, { prefix: "draws" });
+    fastify.register(DivisionsController, { prefix: "divisions" });
 
 	fastify.get("/user", async (request, reply) => {
 		//User.destroy({ truncate: true });
