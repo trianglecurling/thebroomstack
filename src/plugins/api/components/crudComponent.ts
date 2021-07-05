@@ -1,15 +1,13 @@
 import fp from "fastify-plugin";
 import { FastifyPluginAsync } from "fastify";
-import { plainToClass, ClassSchema } from "@deepkit/type";
+import { plainToClass } from "@deepkit/type";
 import {
-	Database,
 	Query,
 	JoinDatabaseQuery,
 	BaseQuery,
 	DeleteResult,
 	PatchResult,
 } from "@deepkit/orm";
-import { ClassType } from "@deepkit/core";
 
 interface CrudOptions {
 	entityName: string;
@@ -24,63 +22,8 @@ interface QueryBuilderOptions {
 	join?: string;
 }
 
-function buildQuery<T extends BaseQuery<any>>(
-	baseQuery: T,
-	builderOptions: QueryBuilderOptions
-): [number | undefined, T] {
-	const { orderBy, project, limit, skip, filter, join } = builderOptions;
-	let query = baseQuery;
-	const model = query.classSchema;
-	let status: number | undefined = undefined;
-	if (orderBy) {
-		const [sortColumn, sortDirection = "asc"] = orderBy.split("-", 2) as [
-			string,
-			SortDirection
-		];
-		if (!model.hasProperty(sortColumn)) {
-			status = 400;
-		}
-		if (sortColumn) {
-			query = query.orderBy(sortColumn, sortDirection);
-		}
-	}
-	if (project) {
-		const columns = project.split(",");
-		for (const column of columns) {
-			if (!model.hasProperty(column)) {
-				status = 400;
-			}
-		}
-		query = query.select(...columns);
-	}
-	if (filter) {
-		try {
-			const filterObj = JSON.parse(filter);
-			query = query.filter(filterObj);
-		} catch {
-			status = 400;
-		}
-	}
-	if (limit) {
-		const limitInt = Number(limit);
-		if (!Number.isInteger(limitInt)) {
-			status = 400;
-		} else {
-			query = query.limit(limitInt);
-		}
-	}
-	if (skip) {
-		const skipInt = Number(skip);
-		if (!Number.isInteger(skipInt)) {
-			status = 400;
-		} else {
-			query = query.skip(skipInt);
-		}
-	}
-	if (join) {
-		query = applyQueryJoins(join, query as any);
-	}
-	return [status, query];
+interface JoinHierarchy {
+	[key: string]: JoinHierarchy;
 }
 
 type SortDirection = "asc" | "desc";
@@ -144,9 +87,7 @@ export const CrudComponent: FastifyPluginAsync<CrudOptions> = fp(
 					reply.status(400);
 				}
 				const plainRecord = { ...body };
-				const references = extractReferences(model, plainRecord);
 				const record = plainToClass(model, plainRecord as any);
-				populateReferences(record, references, fastify.database);
 
 				if (reply.statusCode < 400) {
 					const session = fastify.database.createSession();
@@ -179,10 +120,6 @@ export const CrudComponent: FastifyPluginAsync<CrudOptions> = fp(
 			if (typeof body !== "object") {
 				reply.status(400);
 			}
-			const plainRecord = { ...body };
-			const references = extractReferences(model, plainRecord);
-			const record = plainToClass(model, plainRecord as any);
-			populateReferences(record, references, fastify.database);
 
 			if (reply.statusCode < 400) {
 				let result: PatchResult<any>;
@@ -228,11 +165,81 @@ export const CrudComponent: FastifyPluginAsync<CrudOptions> = fp(
 				reply.send(result);
 			}
 		});
+
+		fastify.delete<{ Params: { id: string } }>(
+			"/:id",
+			async (request, reply) => {
+				const query = fastify.database
+					.query(model)
+					.filter({ id: request.params.id });
+
+				const result = await query.deleteOne();
+				if (result.modified < 1) {
+					reply.status(404);
+				}
+				reply.send(result);
+			}
+		);
 	}
 );
 
-interface JoinHierarchy {
-	[key: string]: JoinHierarchy;
+function buildQuery<T extends BaseQuery<any>>(
+	baseQuery: T,
+	builderOptions: QueryBuilderOptions
+): [number | undefined, T] {
+	const { orderBy, project, limit, skip, filter, join } = builderOptions;
+	let query = baseQuery;
+	const model = query.classSchema;
+	let status: number | undefined = undefined;
+	if (orderBy) {
+		const [sortColumn, sortDirection = "asc"] = orderBy.split("-", 2) as [
+			string,
+			SortDirection
+		];
+		if (!model.hasProperty(sortColumn)) {
+			status = 400;
+		}
+		if (sortColumn) {
+			query = query.orderBy(sortColumn, sortDirection);
+		}
+	}
+	if (project) {
+		const columns = project.split(",");
+		for (const column of columns) {
+			if (!model.hasProperty(column)) {
+				status = 400;
+			}
+		}
+		query = query.select(...columns);
+	}
+	if (filter) {
+		try {
+			const filterObj = JSON.parse(filter);
+			query = query.filter(filterObj);
+		} catch {
+			status = 400;
+		}
+	}
+	if (limit) {
+		const limitInt = Number(limit);
+		if (!Number.isInteger(limitInt)) {
+			status = 400;
+		} else {
+			query = query.limit(limitInt);
+		}
+	}
+	if (skip) {
+		const skipInt = Number(skip);
+		if (!Number.isInteger(skipInt)) {
+			status = 400;
+		} else {
+			query = query.skip(skipInt);
+		}
+	}
+	if (join) {
+		query = applyQueryJoins(join, query as any);
+	}
+	return [status, query];
 }
 
 function applyQueryJoins<T extends Query<any>>(joins: string, query: T): T {
@@ -274,49 +281,4 @@ function buildJoinHierarchy(joinPaths: string[]): JoinHierarchy {
 		}
 	}
 	return hierarchy;
-}
-
-interface ExtractedReferences {
-	[key: string]: [fkValue: number, type: ClassType] | ExtractedReferences;
-}
-
-function extractReferences(
-	schema: ClassSchema<any>,
-	plainRecord: { [x: string]: unknown }
-) {
-	const references: ExtractedReferences = {};
-	for (const [key, value] of Object.entries(plainRecord)) {
-		if (!schema.hasProperty(key)) {
-			throw new Error("Unexpected key");
-		}
-		const property = schema.getProperty(key);
-		if (property.isReference && property.resolveClassType) {
-			if (typeof value === "number") {
-				references[key] = [value, property.getResolvedClassType()];
-				delete plainRecord[key];
-			} else if (typeof value === "object" && value !== null) {
-				const schema = property.getResolvedClassSchema();
-				const subReferences = extractReferences(
-					schema,
-					value as { [x: string]: unknown }
-				);
-				references[key] = subReferences;
-			}
-		}
-	}
-	return references;
-}
-
-function populateReferences(
-	instance: any,
-	references: ExtractedReferences,
-	database: Database
-): void {
-	for (const [key, refData] of Object.entries(references)) {
-		if (Array.isArray(refData)) {
-			instance[key] = database.getReference(refData[1], refData[0]);
-		} else {
-			populateReferences(instance[key], refData, database);
-		}
-	}
 }
