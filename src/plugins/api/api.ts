@@ -15,8 +15,8 @@ export const ApiPlugin: FastifyPluginAsync = async (fastify, opts) => {
 	fastify.register(SeasonsController, { prefix: "seasons" });
 	fastify.register(LeaguesController, { prefix: "leagues" });
 	fastify.register(LeagueFormatsController, { prefix: "leagueFormats" });
-    fastify.register(DrawsController, { prefix: "draws" });
-    fastify.register(DivisionsController, { prefix: "divisions" });
+	fastify.register(DrawsController, { prefix: "draws" });
+	fastify.register(DivisionsController, { prefix: "divisions" });
 
 	fastify.get("/user", async (request, reply) => {
 		//User.destroy({ truncate: true });
