@@ -8,6 +8,12 @@ import {
 	DeleteResult,
 	PatchResult,
 } from "@deepkit/orm";
+import {
+	JoinHierarchy,
+	find,
+	OrderBy,
+} from "../../../services/crud/crudService";
+import { errorHandler } from "../../../util";
 
 interface CrudOptions {
 	entityName: string;
@@ -22,10 +28,6 @@ interface QueryBuilderOptions {
 	join?: string;
 }
 
-interface JoinHierarchy {
-	[key: string]: JoinHierarchy;
-}
-
 type SortDirection = "asc" | "desc";
 
 export const CrudComponent: FastifyPluginAsync<CrudOptions> = fp(
@@ -38,24 +40,87 @@ export const CrudComponent: FastifyPluginAsync<CrudOptions> = fp(
 				method: "find" | "count" | "has";
 			};
 		}>("/", async (request, reply) => {
-			let query = fastify.database.query(model);
-
 			const { method = "find" } = request.query;
 
 			if (
 				method !== "find" &&
 				(request.query.skip || request.query.limit)
 			) {
-				reply.status(400);
+				errorHandler(
+					new Error(
+						"400:The `skip` and `limit` parameters are not valid for a " +
+							method +
+							" call."
+					),
+					reply
+				);
 			}
 
-			const [status, completeQuery] = buildQuery(query, request.query);
-			if (status) {
-				reply.status(status);
+			let orderBy: OrderBy | undefined = undefined;
+			if (request.query.orderBy) {
+				const [field, direction] = request.query.orderBy.split("-", 2);
+				if (
+					typeof direction === "string" &&
+					direction !== "asc" &&
+					direction !== "desc"
+				) {
+					errorHandler(
+						new Error(
+							"400:The `orderBy` param must end with '-asc' or '-desc'."
+						),
+						reply
+					);
+				}
+				orderBy = { field, direction: direction };
+			}
+			const limit = request.query.limit && Number(request.query.limit);
+			if (
+				(request.query.limit && !Number.isInteger(limit)) ||
+				limit === ""
+			) {
+				errorHandler(
+					new Error(
+						"400:Could not parse `" +
+							request.query.limit +
+							"` as an integer."
+					),
+					reply
+				);
+			}
+			const skip = request.query.skip && Number(request.query.skip);
+			if (
+				(request.query.skip && !Number.isInteger(skip)) ||
+				skip === ""
+			) {
+				errorHandler(
+					new Error(
+						"400:Could not parse `" +
+							request.query.skip +
+							"` as an integer."
+					),
+					reply
+				);
 			}
 
-			const records = await completeQuery[method]();
-			reply.send(records);
+			try {
+				const results = await find(fastify.database, model, {
+					orderBy,
+					project: request.query.project?.split(","),
+					limit,
+					skip,
+					filter:
+						typeof request.query.filter === "string"
+							? JSON.parse(request.query.filter)
+							: undefined,
+					join:
+						typeof request.query.join === "string"
+							? buildJoinHierarchy(request.query.join.split(","))
+							: undefined,
+				});
+				reply.send(results);
+			} catch (e: unknown) {
+				errorHandler(e, reply);
+			}
 		});
 
 		fastify.get<{ Params: { id: string }; Querystring: { join?: string } }>(
