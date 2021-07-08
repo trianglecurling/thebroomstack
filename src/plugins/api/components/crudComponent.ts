@@ -2,7 +2,7 @@ import fp from "fastify-plugin";
 import { FastifyPluginAsync } from "fastify";
 import { plainToClass } from "@deepkit/type";
 import { Query, JoinDatabaseQuery, BaseQuery, DeleteResult, PatchResult } from "@deepkit/orm";
-import { JoinHierarchy, find, OrderBy } from "../../../services/crud/crudService";
+import { JoinHierarchy, find, OrderBy, findOne } from "../../../services/crud/crudService";
 import { errorHandler } from "../../../util";
 
 interface CrudOptions {
@@ -74,18 +74,22 @@ export const CrudComponent: FastifyPluginAsync<CrudOptions> = fp(async (fastify,
 	});
 
 	fastify.get<{ Params: { id: string }; Querystring: { join?: string } }>("/:id", async (request, reply) => {
-		let query = fastify.database.query(model).filter({ id: request.params.id });
-
-		if (request.query.join) {
-			query = applyQueryJoins(request.query.join, query);
-		}
-
-		const record = await query.findOneOrUndefined();
-		if (!record) {
-			reply.status(404);
-			reply.send("Not found");
-		} else {
-			reply.send(record);
+		try {
+			const result = await findOne(fastify.database, model, {
+				filter: { id: request.params.id },
+				join:
+					typeof request.query.join === "string"
+						? buildJoinHierarchy(request.query.join.split(","))
+						: undefined,
+			});
+			if (!result) {
+				reply.status(404);
+				throw new Error(`'${model.getName()}' with id '${request.params.id}' was not found.`);
+			} else {
+				reply.send(result);
+			}
+		} catch (e: unknown) {
+			errorHandler(e, reply);
 		}
 	});
 

@@ -84,6 +84,11 @@ function buildQuery<T extends BaseQuery<any>>(baseQuery: T, builderOptions: Quer
 	return query;
 }
 
+export async function findOne(database: Database, model: ClassSchema<any>, options: Omit<QueryOptions, "limit">) {
+	const query = buildQuery(database.query(model), options);
+	return query.findOneOrUndefined();
+}
+
 export async function find(database: Database, model: ClassSchema<any>, options: QueryOptions) {
 	const query = buildQuery(database.query(model), options);
 	return query.find();
