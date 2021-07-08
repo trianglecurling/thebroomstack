@@ -3,7 +3,7 @@ import { FastifyPluginAsync } from "fastify";
 import { plainToClass } from "@deepkit/type";
 import { Query, JoinDatabaseQuery, BaseQuery, DeleteResult, PatchResult } from "@deepkit/orm";
 import { JoinHierarchy, find, OrderBy, findOne } from "../../../services/crud/crudService";
-import { errorHandler } from "../../../util";
+import { xxx } from "../../../util";
 
 interface CrudOptions {
 	entityName: string;
@@ -32,27 +32,24 @@ export const CrudComponent: FastifyPluginAsync<CrudOptions> = fp(async (fastify,
 		const { method = "find" } = request.query;
 
 		if (method !== "find" && (request.query.skip || request.query.limit)) {
-			errorHandler(
-				new Error("400:The `skip` and `limit` parameters are not valid for a " + method + " call."),
-				reply
-			);
+			xxx(new Error("400:The `skip` and `limit` parameters are not valid for a " + method + " call."), reply);
 		}
 
 		let orderBy: OrderBy | undefined = undefined;
 		if (request.query.orderBy) {
 			const [field, direction] = request.query.orderBy.split("-", 2);
 			if (typeof direction === "string" && direction !== "asc" && direction !== "desc") {
-				errorHandler(new Error("400:The `orderBy` param must end with '-asc' or '-desc'."), reply);
+				xxx(new Error("400:The `orderBy` param must end with '-asc' or '-desc'."), reply);
 			}
 			orderBy = { field, direction: direction };
 		}
 		const limit = request.query.limit && Number(request.query.limit);
 		if ((request.query.limit && !Number.isInteger(limit)) || limit === "") {
-			errorHandler(new Error("400:Could not parse `" + request.query.limit + "` as an integer."), reply);
+			xxx(new Error("400:Could not parse `" + request.query.limit + "` as an integer."), reply);
 		}
 		const skip = request.query.skip && Number(request.query.skip);
 		if ((request.query.skip && !Number.isInteger(skip)) || skip === "") {
-			errorHandler(new Error("400:Could not parse `" + request.query.skip + "` as an integer."), reply);
+			xxx(new Error("400:Could not parse `" + request.query.skip + "` as an integer."), reply);
 		}
 
 		try {
@@ -69,7 +66,7 @@ export const CrudComponent: FastifyPluginAsync<CrudOptions> = fp(async (fastify,
 			});
 			reply.send(results);
 		} catch (e: unknown) {
-			errorHandler(e, reply);
+			xxx(e, reply);
 		}
 	});
 
@@ -89,7 +86,7 @@ export const CrudComponent: FastifyPluginAsync<CrudOptions> = fp(async (fastify,
 				reply.send(result);
 			}
 		} catch (e: unknown) {
-			errorHandler(e, reply);
+			xxx(e, reply);
 		}
 	});
 
