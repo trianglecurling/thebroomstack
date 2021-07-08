@@ -19,9 +19,7 @@ declare module "app-core" {
 		}
 		interface FastifyReply {
 			pageData: PageData;
-			renderTemplate: (
-				relativeTemplatePath?: string
-			) => Promise<FastifyReply>;
+			renderTemplate: (relativeTemplatePath?: string) => Promise<FastifyReply>;
 		}
 	}
 }

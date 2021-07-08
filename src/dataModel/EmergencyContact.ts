@@ -10,9 +10,5 @@ export class EmergencyContact implements IDataObject {
 
 	@t.backReference() public user?: User;
 
-	constructor(
-		@t public name: string,
-		@t public phone: string,
-		@t public relationship: string
-	) {}
+	constructor(@t public name: string, @t public phone: string, @t public relationship: string) {}
 }

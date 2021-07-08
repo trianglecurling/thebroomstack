@@ -10,9 +10,5 @@ export class Season implements IDataObject {
 
 	@(t.array(() => League).backReference()) public leagues?: League[];
 
-	constructor(
-		@t public name: string,
-		@t public startDate: Date,
-		@t public endDate: Date
-	) {}
+	constructor(@t public name: string, @t public startDate: Date, @t public endDate: Date) {}
 }

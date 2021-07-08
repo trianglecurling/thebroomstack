@@ -53,8 +53,8 @@ export async function initDB(dangerouslyMigrate: boolean = false) {
 		LeagueTeam,
 		PlayerClub,
 	]);
-    if (dangerouslyMigrate) {
-        await database.migrate();
-    }
+	if (dangerouslyMigrate) {
+		await database.migrate();
+	}
 	return database;
 }

@@ -35,9 +35,5 @@ export class League implements IDataObject {
 
 	@(t.type(() => Season).reference()) public season?: Season;
 
-	constructor(
-		@t public name: string,
-		@t public dayOfWeek: number,
-		@t public teamCapacity: number
-	) {}
+	constructor(@t public name: string, @t public dayOfWeek: number, @t public teamCapacity: number) {}
 }

@@ -11,9 +11,9 @@ export class Draw implements IDataObject {
 
 	@(t.type(() => League).reference()) public league?: League;
 
-    @(t.array(() => Match).backReference()) public matches?: Match[];
+	@(t.array(() => Match).backReference()) public matches?: Match[];
 
-    // @(t.type(() => Event).reference()) public event?: Event;
+	// @(t.type(() => Event).reference()) public event?: Event;
 
 	constructor(@t public date: Date) {}
 }

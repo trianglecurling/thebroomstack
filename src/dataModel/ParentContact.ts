@@ -12,9 +12,5 @@ export class ParentContact implements IDataObject {
 	@(t.array(() => User).backReference({ via: () => UserParentContact }))
 	users?: User[];
 
-	constructor(
-		@t public name: string,
-		@t public phone: string,
-		@t public email: string
-	) {}
+	constructor(@t public name: string, @t public phone: string, @t public email: string) {}
 }

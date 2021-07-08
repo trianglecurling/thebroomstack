@@ -10,9 +10,5 @@ export class Sheet implements IDataObject {
 
 	@(t.array(() => Match).backReference()) public matches?: Match[];
 
-	constructor(
-		@t public name: string,
-		@t public color1: string,
-		@t public color2: string
-	) {}
+	constructor(@t public name: string, @t public color1: string, @t public color2: string) {}
 }

@@ -27,9 +27,7 @@ export class User implements IDataObject {
 	@(t.type(() => EmergencyContact).reference())
 	public emergencyContact?: EmergencyContact;
 
-	@(t
-		.array(() => ParentContact)
-		.backReference({ via: () => UserParentContact }))
+	@(t.array(() => ParentContact).backReference({ via: () => UserParentContact }))
 	parentContacts?: ParentContact[];
 
 	@(t.array(() => League).backReference({ via: () => LeagueMembership }))

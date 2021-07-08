@@ -18,18 +18,12 @@ export const App: React.FC<{}> = function App() {
 						padding: "28px",
 					}}
 				>
-					<Text
-						style={{ color: theme.palette.white }}
-						variant="xLarge"
-					>
+					<Text style={{ color: theme.palette.white }} variant="xLarge">
 						The Broom Stack
 					</Text>
 				</Stack.Item>
 				<Stack.Item grow>
-					<Stack
-						horizontal
-						tokens={{ childrenGap: theme.spacing.l2 }}
-					>
+					<Stack horizontal tokens={{ childrenGap: theme.spacing.l2 }}>
 						<Stack.Item
 							style={{
 								borderRight: `1px solid ${theme.semanticColors.bodyFrameDivider}`,

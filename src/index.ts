@@ -63,16 +63,8 @@ fastify.ready(async () => {
 
 const start = async () => {
 	// Misc boot operations
-	const faviconConfigPath = path.join(
-		__dirname,
-		"..",
-		".config",
-		process.env.FAVICON_CONFIG_PATH ?? "favicon.png"
-	);
-	await fs.copyFile(
-		faviconConfigPath,
-		path.join(__dirname, "..", "public", "favicon.png")
-	);
+	const faviconConfigPath = path.join(__dirname, "..", ".config", process.env.FAVICON_CONFIG_PATH ?? "favicon.png");
+	await fs.copyFile(faviconConfigPath, path.join(__dirname, "..", "public", "favicon.png"));
 
 	try {
 		await fastify.listen(8000);

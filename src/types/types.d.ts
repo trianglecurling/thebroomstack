@@ -12,13 +12,7 @@ export type LeagueKey =
 	| "sunD"
 	| "soc"
 	| "socDues";
-export type SeasonKey =
-	| "f2019"
-	| "w2020"
-	| "f2020"
-	| "w2021"
-	| "f2021"
-	| "w2021";
+export type SeasonKey = "f2019" | "w2020" | "f2020" | "w2021" | "f2021" | "w2021";
 
 export type LeagueMembership = {
 	dateJoined?: Date;

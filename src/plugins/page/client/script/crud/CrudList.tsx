@@ -16,7 +16,6 @@ export const CrudList: React.FC<{}> = () => {
 		isRowHeader: false,
 		minWidth: name === "id" ? 25 : 100,
 		fieldName: name,
-
 	}));
 	return (
 		<div>
@@ -25,8 +24,8 @@ export const CrudList: React.FC<{}> = () => {
 				items={items}
 				selectionMode={SelectionMode.multiple}
 				compact={true}
-                columns={columns}
-                layoutMode={DetailsListLayoutMode.fixedColumns}
+				columns={columns}
+				layoutMode={DetailsListLayoutMode.fixedColumns}
 			/>
 		</div>
 	);

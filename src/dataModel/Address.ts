@@ -9,10 +9,5 @@ export class Address implements IDataObject {
 
 	@t public line2?: string;
 
-	constructor(
-		@t public line1: string,
-		@t public city: string,
-		@t public state: string,
-		@t public zip: string
-	) {}
+	constructor(@t public line1: string, @t public city: string, @t public state: string, @t public zip: string) {}
 }

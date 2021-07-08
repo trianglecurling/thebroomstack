@@ -1,18 +1,8 @@
 import fp from "fastify-plugin";
 import { FastifyPluginAsync } from "fastify";
 import { plainToClass } from "@deepkit/type";
-import {
-	Query,
-	JoinDatabaseQuery,
-	BaseQuery,
-	DeleteResult,
-	PatchResult,
-} from "@deepkit/orm";
-import {
-	JoinHierarchy,
-	find,
-	OrderBy,
-} from "../../../services/crud/crudService";
+import { Query, JoinDatabaseQuery, BaseQuery, DeleteResult, PatchResult } from "@deepkit/orm";
+import { JoinHierarchy, find, OrderBy } from "../../../services/crud/crudService";
 import { errorHandler } from "../../../util";
 
 interface CrudOptions {
@@ -30,223 +20,163 @@ interface QueryBuilderOptions {
 
 type SortDirection = "asc" | "desc";
 
-export const CrudComponent: FastifyPluginAsync<CrudOptions> = fp(
-	async (fastify, opts) => {
-		const { entityName } = opts;
-		const model = fastify.database.getEntity(entityName);
+export const CrudComponent: FastifyPluginAsync<CrudOptions> = fp(async (fastify, opts) => {
+	const { entityName } = opts;
+	const model = fastify.database.getEntity(entityName);
 
-		fastify.get<{
-			Querystring: QueryBuilderOptions & {
-				method: "find" | "count" | "has";
-			};
-		}>("/", async (request, reply) => {
-			const { method = "find" } = request.query;
+	fastify.get<{
+		Querystring: QueryBuilderOptions & {
+			method: "find" | "count" | "has";
+		};
+	}>("/", async (request, reply) => {
+		const { method = "find" } = request.query;
 
-			if (
-				method !== "find" &&
-				(request.query.skip || request.query.limit)
-			) {
-				errorHandler(
-					new Error(
-						"400:The `skip` and `limit` parameters are not valid for a " +
-							method +
-							" call."
-					),
-					reply
-				);
-			}
-
-			let orderBy: OrderBy | undefined = undefined;
-			if (request.query.orderBy) {
-				const [field, direction] = request.query.orderBy.split("-", 2);
-				if (
-					typeof direction === "string" &&
-					direction !== "asc" &&
-					direction !== "desc"
-				) {
-					errorHandler(
-						new Error(
-							"400:The `orderBy` param must end with '-asc' or '-desc'."
-						),
-						reply
-					);
-				}
-				orderBy = { field, direction: direction };
-			}
-			const limit = request.query.limit && Number(request.query.limit);
-			if (
-				(request.query.limit && !Number.isInteger(limit)) ||
-				limit === ""
-			) {
-				errorHandler(
-					new Error(
-						"400:Could not parse `" +
-							request.query.limit +
-							"` as an integer."
-					),
-					reply
-				);
-			}
-			const skip = request.query.skip && Number(request.query.skip);
-			if (
-				(request.query.skip && !Number.isInteger(skip)) ||
-				skip === ""
-			) {
-				errorHandler(
-					new Error(
-						"400:Could not parse `" +
-							request.query.skip +
-							"` as an integer."
-					),
-					reply
-				);
-			}
-
-			try {
-				const results = await find(fastify.database, model, {
-					orderBy,
-					project: request.query.project?.split(","),
-					limit,
-					skip,
-					filter:
-						typeof request.query.filter === "string"
-							? JSON.parse(request.query.filter)
-							: undefined,
-					join:
-						typeof request.query.join === "string"
-							? buildJoinHierarchy(request.query.join.split(","))
-							: undefined,
-				});
-				reply.send(results);
-			} catch (e: unknown) {
-				errorHandler(e, reply);
-			}
-		});
-
-		fastify.get<{ Params: { id: string }; Querystring: { join?: string } }>(
-			"/:id",
-			async (request, reply) => {
-				let query = fastify.database
-					.query(model)
-					.filter({ id: request.params.id });
-
-				if (request.query.join) {
-					query = applyQueryJoins(request.query.join, query);
-				}
-
-				const record = await query.findOneOrUndefined();
-				if (!record) {
-					reply.status(404);
-					reply.send("Not found");
-				} else {
-					reply.send(record);
-				}
-			}
-		);
-
-		fastify.post<{ Body: { [key: string]: unknown } }>(
-			"/",
-			async (request, reply) => {
-				const { body } = request;
-				if (typeof body !== "object") {
-					reply.status(400);
-				}
-				const plainRecord = { ...body };
-				const record = plainToClass(model, plainRecord as any);
-
-				if (reply.statusCode < 400) {
-					const session = fastify.database.createSession();
-					session.add(record);
-					await session.commit();
-					reply.send({ result: "success", entity: plainRecord });
-				}
-			}
-		);
-
-		fastify.patch<{
-			Querystring: QueryBuilderOptions & {
-				many?: "true";
-			};
-			Body: { [key: string]: unknown };
-		}>("/", async (request, reply) => {
-			if (request.query.join || request.query.project) {
-				reply.status(400);
-			}
-			const patchQuery = fastify.database.query(model);
-			const [status, completeQuery] = buildQuery(
-				patchQuery,
-				request.query
+		if (method !== "find" && (request.query.skip || request.query.limit)) {
+			errorHandler(
+				new Error("400:The `skip` and `limit` parameters are not valid for a " + method + " call."),
+				reply
 			);
-			if (status) {
-				reply.status(status);
-			}
+		}
 
-			const { body } = request;
-			if (typeof body !== "object") {
-				reply.status(400);
+		let orderBy: OrderBy | undefined = undefined;
+		if (request.query.orderBy) {
+			const [field, direction] = request.query.orderBy.split("-", 2);
+			if (typeof direction === "string" && direction !== "asc" && direction !== "desc") {
+				errorHandler(new Error("400:The `orderBy` param must end with '-asc' or '-desc'."), reply);
 			}
+			orderBy = { field, direction: direction };
+		}
+		const limit = request.query.limit && Number(request.query.limit);
+		if ((request.query.limit && !Number.isInteger(limit)) || limit === "") {
+			errorHandler(new Error("400:Could not parse `" + request.query.limit + "` as an integer."), reply);
+		}
+		const skip = request.query.skip && Number(request.query.skip);
+		if ((request.query.skip && !Number.isInteger(skip)) || skip === "") {
+			errorHandler(new Error("400:Could not parse `" + request.query.skip + "` as an integer."), reply);
+		}
 
-			if (reply.statusCode < 400) {
-				let result: PatchResult<any>;
-				if (request.query.many === "true") {
-					result = await completeQuery.patchMany(body);
-				} else {
-					result = await completeQuery.patchOne(body);
-				}
-				if (result.modified < 1) {
-					reply.status(404);
-				}
-				reply.send(result);
-			}
-		});
+		try {
+			const results = await find(fastify.database, model, {
+				orderBy,
+				project: request.query.project?.split(","),
+				limit,
+				skip,
+				filter: typeof request.query.filter === "string" ? JSON.parse(request.query.filter) : undefined,
+				join:
+					typeof request.query.join === "string"
+						? buildJoinHierarchy(request.query.join.split(","))
+						: undefined,
+			});
+			reply.send(results);
+		} catch (e: unknown) {
+			errorHandler(e, reply);
+		}
+	});
 
-		fastify.delete<{
-			Querystring: QueryBuilderOptions & {
-				many?: "true";
-			};
-		}>("/", async (request, reply) => {
-			if (request.query.join || request.query.project) {
-				reply.status(400);
-			}
-			const deleteQuery = fastify.database.query(model);
-			const [status, completeQuery] = buildQuery(
-				deleteQuery,
-				request.query
-			);
-			if (status) {
-				reply.status(status);
-			}
+	fastify.get<{ Params: { id: string }; Querystring: { join?: string } }>("/:id", async (request, reply) => {
+		let query = fastify.database.query(model).filter({ id: request.params.id });
 
-			if (reply.statusCode < 400) {
-				let result: DeleteResult<any>;
-				if (request.query.many === "true") {
-					result = await completeQuery.deleteMany();
-				} else {
-					result = await completeQuery.deleteOne();
-				}
-				if (result.modified < 1) {
-					reply.status(404);
-				}
-				reply.send(result);
-			}
-		});
+		if (request.query.join) {
+			query = applyQueryJoins(request.query.join, query);
+		}
 
-		fastify.delete<{ Params: { id: string } }>(
-			"/:id",
-			async (request, reply) => {
-				const query = fastify.database
-					.query(model)
-					.filter({ id: request.params.id });
+		const record = await query.findOneOrUndefined();
+		if (!record) {
+			reply.status(404);
+			reply.send("Not found");
+		} else {
+			reply.send(record);
+		}
+	});
 
-				const result = await query.deleteOne();
-				if (result.modified < 1) {
-					reply.status(404);
-				}
-				reply.send(result);
+	fastify.post<{ Body: { [key: string]: unknown } }>("/", async (request, reply) => {
+		const { body } = request;
+		if (typeof body !== "object") {
+			reply.status(400);
+		}
+		const plainRecord = { ...body };
+		const record = plainToClass(model, plainRecord as any);
+
+		if (reply.statusCode < 400) {
+			const session = fastify.database.createSession();
+			session.add(record);
+			await session.commit();
+			reply.send({ result: "success", entity: plainRecord });
+		}
+	});
+
+	fastify.patch<{
+		Querystring: QueryBuilderOptions & {
+			many?: "true";
+		};
+		Body: { [key: string]: unknown };
+	}>("/", async (request, reply) => {
+		if (request.query.join || request.query.project) {
+			reply.status(400);
+		}
+		const patchQuery = fastify.database.query(model);
+		const [status, completeQuery] = buildQuery(patchQuery, request.query);
+		if (status) {
+			reply.status(status);
+		}
+
+		const { body } = request;
+		if (typeof body !== "object") {
+			reply.status(400);
+		}
+
+		if (reply.statusCode < 400) {
+			let result: PatchResult<any>;
+			if (request.query.many === "true") {
+				result = await completeQuery.patchMany(body);
+			} else {
+				result = await completeQuery.patchOne(body);
 			}
-		);
-	}
-);
+			if (result.modified < 1) {
+				reply.status(404);
+			}
+			reply.send(result);
+		}
+	});
+
+	fastify.delete<{
+		Querystring: QueryBuilderOptions & {
+			many?: "true";
+		};
+	}>("/", async (request, reply) => {
+		if (request.query.join || request.query.project) {
+			reply.status(400);
+		}
+		const deleteQuery = fastify.database.query(model);
+		const [status, completeQuery] = buildQuery(deleteQuery, request.query);
+		if (status) {
+			reply.status(status);
+		}
+
+		if (reply.statusCode < 400) {
+			let result: DeleteResult<any>;
+			if (request.query.many === "true") {
+				result = await completeQuery.deleteMany();
+			} else {
+				result = await completeQuery.deleteOne();
+			}
+			if (result.modified < 1) {
+				reply.status(404);
+			}
+			reply.send(result);
+		}
+	});
+
+	fastify.delete<{ Params: { id: string } }>("/:id", async (request, reply) => {
+		const query = fastify.database.query(model).filter({ id: request.params.id });
+
+		const result = await query.deleteOne();
+		if (result.modified < 1) {
+			reply.status(404);
+		}
+		reply.send(result);
+	});
+});
 
 function buildQuery<T extends BaseQuery<any>>(
 	baseQuery: T,
@@ -257,10 +187,7 @@ function buildQuery<T extends BaseQuery<any>>(
 	const model = query.classSchema;
 	let status: number | undefined = undefined;
 	if (orderBy) {
-		const [sortColumn, sortDirection = "asc"] = orderBy.split("-", 2) as [
-			string,
-			SortDirection
-		];
+		const [sortColumn, sortDirection = "asc"] = orderBy.split("-", 2) as [string, SortDirection];
 		if (!model.hasProperty(sortColumn)) {
 			status = 400;
 		}
@@ -317,10 +244,7 @@ function applyQueryJoins<T extends Query<any>>(joins: string, query: T): T {
 	return query;
 }
 
-function _applyQueryJoins(
-	hierarchy: JoinHierarchy,
-	query: JoinDatabaseQuery<any, any>
-): JoinDatabaseQuery<any, any> {
+function _applyQueryJoins(hierarchy: JoinHierarchy, query: JoinDatabaseQuery<any, any>): JoinDatabaseQuery<any, any> {
 	for (const [key, value] of Object.entries(hierarchy)) {
 		let joinQuery = query.useJoinWith(key);
 		joinQuery = _applyQueryJoins(value, joinQuery);

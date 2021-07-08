@@ -10,12 +10,10 @@ export function getEntities(database: Database) {
 				properties: e.getProperties().map((p) => ({
 					name: p.name,
 					type: p.type,
-					referenceType: p.isReference
-						? p.getResolvedClassSchema().getName()
-						: undefined,
+					referenceType: p.isReference ? p.getResolvedClassSchema().getName() : undefined,
 				})),
 			},
 		])
 	);
-    return entities;
+	return entities;
 }

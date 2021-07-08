@@ -1,10 +1,4 @@
-import {
-	BaseQuery,
-	Database,
-	FilterQuery,
-	JoinDatabaseQuery,
-	Query,
-} from "@deepkit/orm";
+import { BaseQuery, Database, FilterQuery, JoinDatabaseQuery, Query } from "@deepkit/orm";
 import { ClassSchema } from "@deepkit/type";
 
 export interface OrderBy {
@@ -25,10 +19,7 @@ export interface QueryOptions {
 	join?: JoinHierarchy;
 }
 
-function _applyQueryJoins(
-	hierarchy: JoinHierarchy,
-	query: JoinDatabaseQuery<any, any>
-): JoinDatabaseQuery<any, any> {
+function _applyQueryJoins(hierarchy: JoinHierarchy, query: JoinDatabaseQuery<any, any>): JoinDatabaseQuery<any, any> {
 	for (const [key, value] of Object.entries(hierarchy)) {
 		let joinQuery = query.useJoinWith(key);
 		joinQuery = _applyQueryJoins(value, joinQuery);
@@ -37,10 +28,7 @@ function _applyQueryJoins(
 	return query;
 }
 
-function applyQueryJoins<T extends Query<any>>(
-	joins: JoinHierarchy,
-	query: T
-): T {
+function applyQueryJoins<T extends Query<any>>(joins: JoinHierarchy, query: T): T {
 	for (const [key, value] of Object.entries(joins)) {
 		let joinQuery = query.useJoinWith(key);
 		joinQuery = _applyQueryJoins(value, joinQuery);
@@ -49,10 +37,7 @@ function applyQueryJoins<T extends Query<any>>(
 	return query;
 }
 
-function buildQuery<T extends BaseQuery<any>>(
-	baseQuery: T,
-	builderOptions: QueryOptions
-): T {
+function buildQuery<T extends BaseQuery<any>>(baseQuery: T, builderOptions: QueryOptions): T {
 	const { orderBy, project, limit, skip, filter, join } = builderOptions;
 	let query = baseQuery;
 	const model = query.classSchema;
@@ -99,11 +84,7 @@ function buildQuery<T extends BaseQuery<any>>(
 	return query;
 }
 
-export async function find(
-	database: Database,
-	model: ClassSchema<any>,
-	options: QueryOptions
-) {
+export async function find(database: Database, model: ClassSchema<any>, options: QueryOptions) {
 	const query = buildQuery(database.query(model), options);
 	return query.find();
 }

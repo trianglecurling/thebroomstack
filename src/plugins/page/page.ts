@@ -21,20 +21,17 @@ export const PagePlugin: FastifyPluginAsync = fp(async (fastify, opts) => {
 			pageTitle: fastify.appName,
 		};
 	});
-	fastify.decorateReply(
-		"renderTemplate",
-		async function (this: FastifyReply, relativeTemplatePath?: string) {
-			const templatePath = path.join(
-				"src",
-				"plugins",
-				"page",
-				"client",
-				"templates",
-				relativeTemplatePath ?? "index.ejs"
-			);
+	fastify.decorateReply("renderTemplate", async function (this: FastifyReply, relativeTemplatePath?: string) {
+		const templatePath = path.join(
+			"src",
+			"plugins",
+			"page",
+			"client",
+			"templates",
+			relativeTemplatePath ?? "index.ejs"
+		);
 
-			return this.view(templatePath, this.pageData);
-		}
-	);
+		return this.view(templatePath, this.pageData);
+	});
 	fastify.register(CrudPlugin, { prefix: "/crud" });
 });

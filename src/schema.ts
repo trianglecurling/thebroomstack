@@ -406,8 +406,8 @@ export default fp(async (fastify, opts) => {
 	Division.belongsTo(League);
 	League.hasMany(DrawTime);
 	DrawTime.belongsTo(League);
-    League.belongsTo(Season);
-    Season.hasMany(League);
+	League.belongsTo(Season);
+	Season.hasMany(League);
 
 	// Matches
 	Match.belongsTo(Sheet);

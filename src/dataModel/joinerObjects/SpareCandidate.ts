@@ -5,7 +5,7 @@ import { User } from "../User";
 @entity.name("spareCandidate")
 export class SpareCandidate {
 	@t.primary.autoIncrement public id: number = 0;
-    @t public created: Date = new Date();
+	@t public created: Date = new Date();
 	@t public modified?: Date;
 
 	constructor(

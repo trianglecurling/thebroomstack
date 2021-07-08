@@ -8,10 +8,7 @@ const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const isDevelopment = process.env.NODE_ENV !== "production";
 module.exports = {
 	mode: isDevelopment ? "development" : "production",
-	entry: [
-		"webpack-hot-middleware/client?path=/__webpack_hmr",
-		path.join(__dirname, "script", "index.tsx"),
-	],
+	entry: ["webpack-hot-middleware/client?path=/__webpack_hmr", path.join(__dirname, "script", "index.tsx")],
 	devtool: "source-map",
 	module: {
 		rules: [
@@ -23,9 +20,7 @@ module.exports = {
 						loader: require.resolve("ts-loader"),
 						options: {
 							getCustomTransformers: () => ({
-								before: isDevelopment
-									? [ReactRefreshTypeScript()]
-									: [],
+								before: isDevelopment ? [ReactRefreshTypeScript()] : [],
 							}),
 						},
 					},
