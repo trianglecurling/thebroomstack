@@ -3,6 +3,21 @@ The Broom Stack is software to manage a curling club, including a back end and w
 
 Currently, it is being re-written from the ground-up, so there's not much to demo right now. You can check out the code, however.
 
+## Architecture
+You will find project configuration at the root, and all source code in [/src/](./src). Fastify uses a plugin model ("everything is a plugin!"), so from there you will find a [plugins/](./src/plugins/) directory. Everything that is dependent on the request lifecycle will live in this folder.
+
+Since the client is dependent on the request lifecycle, it's a plugin, too! Client code lives in [/src/plugins/page/client/](./src/plugins/page/client). This is also where you will find the webpack build configuration.
+
+The other largest plugin is the api plugin. It implements the REST API for The Broom Stack. Within [/plugins/api/](./src/plugins/api) you will find [controllers](./src/plugins/api/controllers) and [components](./src/plugins/api/components). **Controllers** are plugins (remember, _everything_ is a plugin!) that define routes and their implementations. **Components** are plugins that share common functionality among many controllers. For example, the [crud component](./src/plugins/api/components/crudComponent.ts) automatically provides create/read/update/delete routes to any controller.
+
+Next we have [services](./src/services). Services live outside the request lifecycle and do the heavy-lifting of implementing features. Generally, a controller will define a route and implement it by doing 3 things:
+
+1. Parse the request into more salient data types and structures.
+2. Use services to perform the necessary computations.
+3. Serialize the response.
+
+Finally, the [dataModel](./src/dataModel) contains our persisted object models using Deepkit ORM's patterns. Each table in the databse has a corresponding class in this folder. The database object is contructed in [database.ts](./src/dataModel/database.ts).
+
 ## Stack
 Core tech is still:
 
