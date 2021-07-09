@@ -8,7 +8,7 @@ You will find project configuration at the root, and all source code in [/src/](
 
 Since the client is dependent on the request lifecycle, it's a plugin, too! Client code lives in [/src/plugins/page/client/](./src/plugins/page/client). This is also where you will find the webpack build configuration.
 
-The other largest plugin is the api plugin. It implements the REST API for The Broom Stack. Within [/plugins/api/](./src/plugins/api) you will find [controllers](./src/plugins/api/controllers) and [components](./src/plugins/api/components). **Controllers** are plugins (remember, _everything_ is a plugin!) that define routes and their implementations. **Components** are plugins that share common functionality among many controllers. For example, the [crud component](./src/plugins/api/components/crudComponent.ts) automatically provides create/read/update/delete routes to any controller.
+The other largest plugin is the api plugin. It implements the REST API for The Broom Stack. Within [plugins/api/](./src/plugins/api) you will find [controllers](./src/plugins/api/controllers) and [components](./src/plugins/api/components). **Controllers** are plugins (remember, _everything_ is a plugin!) that define routes and their implementations. **Components** are plugins that share common functionality among many controllers. For example, the [crud component](./src/plugins/api/components/crudComponent.ts) automatically provides create/read/update/delete routes to any controller.
 
 Next we have [services](./src/services). Services live outside the request lifecycle and do the heavy-lifting of implementing features. Generally, a controller will define a route and implement it by doing 3 things:
 
