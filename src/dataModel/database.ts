@@ -63,37 +63,3 @@ export class TheBroomstackDatabase extends Database {
 		]);
 	}
 }
-
-// export async function initDB({ dangerouslyMigrate = false }: { dangerouslyMigrate?: boolean }) {
-// 	const dbPath = path.join(__dirname, "..", "..", "data", "db2.sqlite");
-// 	const database = new Database(new SQLiteDatabaseAdapter(dbPath), [
-// 		// Data objects
-// 		User,
-// 		Address,
-// 		EmergencyContact,
-// 		ParentContact,
-// 		League,
-// 		LeagueFormat,
-// 		Draw,
-// 		DrawTime,
-// 		Division,
-// 		Invoice,
-// 		Match,
-// 		Team,
-// 		Sheet,
-// 		Player,
-// 		Club,
-// 		Season,
-
-// 		// Association objects
-// 		UserParentContact,
-// 		LeagueMembership,
-// 		SpareCandidate,
-// 		LeagueTeam,
-// 		PlayerClub,
-// 	]);
-// 	if (dangerouslyMigrate) {
-// 		await database.migrate();
-// 	}
-// 	return database;
-// }
