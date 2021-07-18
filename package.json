@@ -6,8 +6,8 @@
 	"scripts": {
 		"dev": "run-p dev:*",
 		"dev:app": "nodemon",
-        "run": "run-p run:*",
-        "run:server": "ts-node src/app.ts server:listen",
+		"run": "run-p run:*",
+		"run:server": "ts-node src/app.ts server:listen",
 		"build": "run-p build:*",
 		"build:client": "webpack --config ./src/plugins/page/client/webpack.config.js",
 		"build:server": "tsc -p .",
