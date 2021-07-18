@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 import fp from "fastify-plugin";
 import { FastifyPluginAsync } from "fastify";
 import { plainToClass } from "@deepkit/type";

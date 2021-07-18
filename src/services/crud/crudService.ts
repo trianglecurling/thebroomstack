@@ -1,5 +1,6 @@
 import { BaseQuery, Database, FilterQuery, JoinDatabaseQuery, Query } from "@deepkit/orm";
 import { ClassSchema } from "@deepkit/type";
+import { TheBroomstackDatabase } from "../../dataModel/database";
 
 export interface OrderBy {
 	field: string;
@@ -84,30 +85,25 @@ function buildQuery<T extends BaseQuery<any>>(baseQuery: T, builderOptions: Quer
 	return query;
 }
 
-export async function findOne(database: Database, model: ClassSchema<any>, options: Omit<QueryOptions, "limit">) {
-	const query = buildQuery(database.query(model), options);
-	return query.findOneOrUndefined();
-}
+export class CrudService {
+	constructor(protected database: TheBroomstackDatabase) {}
+	public async findOne(model: ClassSchema<any>, options: Omit<QueryOptions, "limit">) {
+		const query = buildQuery(this.database.query(model), options);
+		return query.findOneOrUndefined();
+	}
 
-export async function find(database: Database, model: ClassSchema<any>, options: QueryOptions) {
-	const query = buildQuery(database.query(model), options);
-	return query.find();
-}
+	public async find(model: ClassSchema<any>, options: QueryOptions) {
+		const query = buildQuery(this.database.query(model), options);
+		return query.find();
+	}
 
-export async function count(
-	database: Database,
-	model: ClassSchema<any>,
-	options: Omit<QueryOptions, "skip" | "limit" | "orderBy">
-) {
-	const query = buildQuery(database.query(model), options);
-	return query.count();
-}
+	public async count(model: ClassSchema<any>, options: Omit<QueryOptions, "skip" | "limit" | "orderBy">) {
+		const query = buildQuery(this.database.query(model), options);
+		return query.count();
+	}
 
-export async function has(
-	database: Database,
-	model: ClassSchema<any>,
-	options: Omit<QueryOptions, "skip" | "limit" | "orderBy">
-) {
-	const query = buildQuery(database.query(model), options);
-	return query.has();
+	public async has(model: ClassSchema<any>, options: Omit<QueryOptions, "skip" | "limit" | "orderBy">) {
+		const query = buildQuery(this.database.query(model), options);
+		return query.has();
+	}
 }

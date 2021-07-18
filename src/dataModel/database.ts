@@ -1,6 +1,5 @@
 import { SQLiteDatabaseAdapter } from "@deepkit/sqlite";
 import { Database } from "@deepkit/orm";
-import path from "path";
 
 import { User } from "./User";
 import { Address } from "./Address";
@@ -24,37 +23,77 @@ import { LeagueMembership } from "./joinerObjects/LeagueMembership";
 import { SpareCandidate } from "./joinerObjects/SpareCandidate";
 import { LeagueTeam } from "./joinerObjects/LeagueTeam";
 import { PlayerClub } from "./joinerObjects/PlayerClub";
+import { AppConfig } from "../appConfig";
 
-export async function initDB(dangerouslyMigrate: boolean = false) {
-	const dbPath = path.join(__dirname, "..", "..", "data", "db2.sqlite");
-	const database = new Database(new SQLiteDatabaseAdapter(dbPath), [
-		// Data objects
-		User,
-		Address,
-		EmergencyContact,
-		ParentContact,
-		League,
-		LeagueFormat,
-		Draw,
-		DrawTime,
-		Division,
-		Invoice,
-		Match,
-		Team,
-		Sheet,
-		Player,
-		Club,
-		Season,
+import { injectable } from "@deepkit/injector";
 
-		// Association objects
-		UserParentContact,
-		LeagueMembership,
-		SpareCandidate,
-		LeagueTeam,
-		PlayerClub,
-	]);
-	if (dangerouslyMigrate) {
-		await database.migrate();
+import path from "path";
+
+class DatabaseSettings extends AppConfig.slice(["dbPath"]) {}
+
+@injectable()
+export class TheBroomstackDatabase extends Database {
+	name = "default";
+	constructor(protected settings: DatabaseSettings) {
+		super(new SQLiteDatabaseAdapter(path.resolve(__dirname, "..", "..", settings.dbPath)), [
+			// Data objects
+			User,
+			Address,
+			EmergencyContact,
+			ParentContact,
+			League,
+			LeagueFormat,
+			Draw,
+			DrawTime,
+			Division,
+			Invoice,
+			Match,
+			Team,
+			Sheet,
+			Player,
+			Club,
+			Season,
+
+			// Association objects
+			UserParentContact,
+			LeagueMembership,
+			SpareCandidate,
+			LeagueTeam,
+			PlayerClub,
+		]);
 	}
-	return database;
 }
+
+// export async function initDB({ dangerouslyMigrate = false }: { dangerouslyMigrate?: boolean }) {
+// 	const dbPath = path.join(__dirname, "..", "..", "data", "db2.sqlite");
+// 	const database = new Database(new SQLiteDatabaseAdapter(dbPath), [
+// 		// Data objects
+// 		User,
+// 		Address,
+// 		EmergencyContact,
+// 		ParentContact,
+// 		League,
+// 		LeagueFormat,
+// 		Draw,
+// 		DrawTime,
+// 		Division,
+// 		Invoice,
+// 		Match,
+// 		Team,
+// 		Sheet,
+// 		Player,
+// 		Club,
+// 		Season,
+
+// 		// Association objects
+// 		UserParentContact,
+// 		LeagueMembership,
+// 		SpareCandidate,
+// 		LeagueTeam,
+// 		PlayerClub,
+// 	]);
+// 	if (dangerouslyMigrate) {
+// 		await database.migrate();
+// 	}
+// 	return database;
+// }
