@@ -5,6 +5,9 @@ import { AppConfig } from "./appConfig";
 import { TheBroomstackDatabase } from "./dataModel/database";
 import { CrudModule } from "./modules/crud";
 import path from "path";
+import * as Util from "./util";
+
+Object.values(Util.httpStatusCodes);
 
 Application.create({
 	config: AppConfig,

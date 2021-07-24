@@ -1,5 +1,5 @@
 import { http, HttpResponse } from "@deepkit/http";
-import { getClassSchema, t, ClassSchema } from "@deepkit/type";
+import { getClassSchema, plainToClass, t, ClassSchema } from "@deepkit/type";
 import { getObjectKeysSize, ClassType } from "@deepkit/core";
 import { AppModule } from "@deepkit/app";
 import { TheBroomstackDatabase } from "../dataModel/database";
@@ -27,77 +27,169 @@ import { SpareCandidate } from "../dataModel/joinerObjects/SpareCandidate";
 import { LeagueTeam } from "../dataModel/joinerObjects/LeagueTeam";
 import { PlayerClub } from "../dataModel/joinerObjects/PlayerClub";
 
+import { JoinHierarchy, OrderBy, CrudService, QueryOptions } from "../services/crud/crudService";
+
 // https://gist.github.com/marcj/4ea2a6f45888b637a6ad72cc8ab41d84
+
+function buildJoinHierarchy(joinPaths: string | string[] | undefined): JoinHierarchy | undefined {
+	if (!joinPaths) {
+		return undefined;
+	}
+	const parsedPaths = Array.isArray(joinPaths) ? joinPaths : joinPaths.split(",");
+	const hierarchy: JoinHierarchy = {};
+	for (const path of parsedPaths) {
+		const segments = path.split(".");
+		let currentHierarchy: JoinHierarchy = hierarchy;
+		for (let i = 0; i < segments.length; ++i) {
+			const segment = segments[i];
+			if (!(segment in currentHierarchy)) {
+				const newHierarchy: JoinHierarchy = {};
+				currentHierarchy[segment] = newHierarchy;
+				currentHierarchy = newHierarchy;
+			} else {
+				currentHierarchy = currentHierarchy[segment];
+			}
+		}
+	}
+	return hierarchy;
+}
 
 function createController(schema: ClassSchema): ClassType {
 	if (!schema.name) throw new Error(`Class ${schema.getClassName()} needs an entity name via @entity.name()`);
 
-	class EntityListOptions {
-		@t.map(t.union("asc", "desc")) orderBy: { [name: string]: "asc" | "desc" } = {};
-		@t.array(t.string) project: string[] = [];
-		@t.optional limit: number = Infinity;
-		@t.optional skip: number = 0;
-		@t.partial(schema) filter?: Partial<any>;
-		@t.map(t.string) join: { [name: string]: string } = {};
+	class EntityQueryOptionsBase {
+		@t.string.optional orderBy: string | undefined;
+		@t.number.optional limit: number | undefined;
+		@t.number.optional skip: number | undefined;
+		@t.string.optional filter: string | undefined;
+	}
+
+	class EntityListQueryOptions extends EntityQueryOptionsBase {
+		@t.string.optional project: string | undefined;
+		@t.string.optional join: string | undefined;
+		@(t.union(t.literal("find"), t.literal("count"), t.literal("has")).default("find")) method:
+			| "find"
+			| "count"
+			| "has" = "find";
+	}
+
+	class EntityUpdateQueryOptions extends EntityQueryOptionsBase {
+		@t.boolean.optional many: boolean | undefined;
+	}
+
+	function parseOrderBy(orderBy: string | undefined): OrderBy | undefined {
+		if (!orderBy) {
+			return undefined;
+		}
+		const [field, direction] = orderBy.split("-", 2);
+		if (typeof direction === "string" && direction !== "asc" && direction !== "desc") {
+			throw new HttpError(400, "The `orderBy` param must end with '-asc' or '-desc'.");
+		}
+		if (!schema.hasProperty(field)) {
+			throw new HttpError(400, `The field "${field}" does not exist in the "${schema.name}" schema.`);
+		}
+		return { field, direction: direction };
 	}
 
 	const primaryKey = schema.getPrimaryField();
 
 	@http.controller("/api/v1/" + schema.name)
 	class RestController {
-		constructor(protected database: TheBroomstackDatabase) {}
+		constructor(protected database: TheBroomstackDatabase, protected crudService: CrudService) {}
 
-		@http.GET("")
-		async list(@http.queries() options: EntityListOptions, response: HttpResponse) {
-			options.limit = Math.min(100, options.limit); //max 100
-			let query = this.database.query(schema);
-
-			for (const field of Object.keys(query.orderBy)) {
-				if (!schema.hasProperty(field)) throw new Error(`Field ${field} does not exist`);
+		/**
+		 * Gets an array of results
+		 */
+		@(http.GET("").description(`Gets a list of ${schema.name}.`))
+		async list(@http.queries() options: EntityListQueryOptions) {
+			if (options.method !== "find" && (options.skip !== undefined || options.limit !== undefined)) {
+				throw new HttpError(400, "Cannot use skip or limit with count or has methods");
 			}
 
-			for (const [field, projection] of Object.entries(options.join)) {
-				if (!schema.hasProperty(field)) throw new Error(`Join ${field} does not exist`);
-				let join = query.useJoinWith(field);
-				if (projection.length) {
-					join = join.select(...projection.split(","));
-				}
-				query = join.end();
+			const queryOptions: QueryOptions = {
+				orderBy: parseOrderBy(options.orderBy),
+				project: options.project?.split(","),
+				limit: options.limit,
+				skip: options.skip,
+				filter: typeof options.filter === "string" ? JSON.parse(options.filter) : undefined,
+				join: buildJoinHierarchy(options.join),
+			};
+			if (options.method === "find") {
+				return this.crudService.find(schema, queryOptions);
+			} else if (options.method === "count") {
+				return this.crudService.count(schema, queryOptions);
+			} else if (options.method === "has") {
+				return this.crudService.has(schema, queryOptions);
+			} else {
+				throw new HttpError(400, "Invalid method");
 			}
+		}
 
-			if (options.project) query = query.select(...options.project);
-
-			if (getObjectKeysSize(query.orderBy) > 0) query.model.sort = query.orderBy;
-
-			return query.filter(options.filter).limit(options.limit).skip(options.skip).find();
+		/**
+		 * Gets a single result by id.
+		 */
+		@(http.GET(":id").description(`Gets a single ${schema.name} by id.`))
+		async get(@(http.query().optional) join: string | undefined, id: number) {
+			const result = await this.crudService.findOne(schema, {
+				filter: { [primaryKey.name]: id },
+				join: buildJoinHierarchy(join),
+			});
+			if (!result) {
+				throw new HttpError(404, `No ${schema.name} with id ${id} found.`);
+			} else {
+				return result;
+			}
 		}
 
 		@(http.POST("").description("Adds a new " + schema.name))
 		async post(@t.type(schema) @http.body() body: any) {
-			//body is automatically validated
-			await this.database.persist(body);
-			return { [primaryKey.name]: body[primaryKey.name] };
+			return this.crudService.create(schema, body);
 		}
 
-		@(http.DELETE(":id").description("Delete a " + schema.name))
-		async remove(id: number) {
-			const result = await this.database
-				.query(schema)
-				.filter({ [primaryKey.name]: id })
-				.deleteOne();
-			return { deleted: result.modified };
+		@(http.DELETE("").description(`Deletes ${schema.name} records.`))
+		async delete(@http.queries() options: EntityUpdateQueryOptions) {
+			const deleteOptions = {
+				orderBy: parseOrderBy(options.orderBy),
+				limit: options.limit,
+				skip: options.skip,
+				filter: typeof options.filter === "string" ? JSON.parse(options.filter) : undefined,
+				many: options.many,
+			};
+
+			return this.crudService.delete(schema, deleteOptions);
 		}
 
-		@(http.PUT(":id").description("Updates " + schema.name))
-		async put(id: number, @t.type(schema) @http.body() body: any) {
-			const item = await this.database
-				.query(schema)
-				.filter({ [primaryKey.name]: id })
-				.findOne();
-			delete body[primaryKey.name]; //we dont allow to change primary
-			Object.assign(item, body);
-			await this.database.persist(item);
-			return true;
+		@(http.DELETE(":id").description(`Deletes ${schema.name} records.`))
+		async deleteOne(id: number) {
+			const deleteOptions = {
+				filter: { [primaryKey.name]: id },
+				many: false,
+			};
+
+			return this.crudService.delete(schema, deleteOptions);
+		}
+
+		@(http.PUT("").description("Updates " + schema.name))
+		async update(@t.partial(schema) @http.body() body: any, @http.queries() options: EntityUpdateQueryOptions) {
+			const patchOptions = {
+				orderBy: parseOrderBy(options.orderBy),
+				limit: options.limit,
+				skip: options.skip,
+				filter: typeof options.filter === "string" ? JSON.parse(options.filter) : undefined,
+				many: options.many,
+			};
+
+			return this.crudService.update(schema, patchOptions, body);
+		}
+
+        @(http.PUT(":id").description("Updates " + schema.name))
+		async updateOne(id: number, @t.partial(schema) @http.body() body: any) {
+			const patchOptions = {
+				filter: { [primaryKey.name]: id },
+				many: false,
+			};
+
+			return this.crudService.update(schema, patchOptions, body);
 		}
 	}
 
@@ -131,6 +223,10 @@ const schemas = [
 ];
 const controllers = schemas.map(getClassSchema).map(createController);
 
-export const CrudModule = new AppModule({
-	controllers: controllers,
-});
+export const CrudModule = new AppModule(
+	{
+		controllers: controllers,
+		providers: [CrudService],
+	},
+	"crud"
+);

@@ -5,7 +5,9 @@
 	"main": "dist/index.js",
 	"scripts": {
 		"dev": "run-p dev:*",
-		"dev:app": "nodemon",
+        "dev:app": "run-p dev:app:*",
+        "dev:app:nodemon": "nodemon ./dist/app.js server:listen",
+		"dev:app:typescript": "tsc --watch -p .",
 		"start": "run-p start:*",
 		"start:server": "ts-node src/app.ts server:listen",
 		"build": "run-p build:*",
