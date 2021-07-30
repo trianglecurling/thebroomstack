@@ -169,6 +169,7 @@ function createController(schema: ClassSchema): ClassType {
 			return this.crudService.delete(schema, deleteOptions);
 		}
 
+        // Should be PATCH
 		@(http.PUT("").description("Updates " + schema.name))
 		async update(@t.partial(schema) @http.body() body: any, @http.queries() options: EntityUpdateQueryOptions) {
 			const patchOptions = {
@@ -182,6 +183,7 @@ function createController(schema: ClassSchema): ClassType {
 			return this.crudService.update(schema, patchOptions, body);
 		}
 
+        // Should be PATCH
         @(http.PUT(":id").description("Updates " + schema.name))
 		async updateOne(id: number, @t.partial(schema) @http.body() body: any) {
 			const patchOptions = {
