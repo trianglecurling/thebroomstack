@@ -26,14 +26,14 @@ Application.create({
 	controllers: [AppController],
 	imports: [
 		KernelModule.configure({
-			databases: [TheBroomstackDatabase],
 			migrateOnStartup: true,
 			debug: true,
 		}),
 		CrudModule,
 		MetaModule,
-		FrontendModule,
+		FrontendModule.forRoot(),
 	],
+	providers: [TheBroomstackDatabase],
 })
 	.loadConfigFromEnvFile(path.resolve(__dirname, "..", ".env"))
 	.run();
