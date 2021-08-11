@@ -4,6 +4,8 @@ The Broom Stack is software to manage a curling club, including a back end and w
 Currently, it is being re-written from the ground-up, so there's not much to demo right now. You can check out the code, however.
 
 ## Architecture
+Note: We are currently experimenting with moving to @deepkit/framework at the branch `deepkit-framework`.
+
 You will find project configuration at the root, and all source code in [/src/](./src). Fastify uses a plugin model ("everything is a plugin!"), so from there you will find a [plugins/](./src/plugins/) directory. Everything that is dependent on the request lifecycle will live in this folder.
 
 Since the client is dependent on the request lifecycle, it's a plugin, too! Client code lives in [/src/plugins/page/client/](./src/plugins/page/client). This is also where you will find the webpack build configuration.
