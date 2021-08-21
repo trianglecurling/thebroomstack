@@ -26,7 +26,6 @@ export const ModelList: React.FC<{}> = () => {
 			})),
 		},
 	];
-	console.log("Nav render");
 	return <Nav groups={navLinkGroups} onLinkClick={onLinkClick} />;
 };
 ModelList.displayName = "ModelList";
