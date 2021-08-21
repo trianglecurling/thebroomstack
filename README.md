@@ -4,8 +4,6 @@ The Broom Stack is software to manage a curling club, including a back end and w
 Currently, it is being re-written from the ground-up, so there's not much to demo right now. You can check out the code, however.
 
 ## Architecture
-Note: We are currently experimenting with moving to @deepkit/framework at the branch `deepkit-framework`.
-
 You will find project configuration at the root, and all source code in [/src/](./src). Fastify uses a plugin model ("everything is a plugin!"), so from there you will find a [plugins/](./src/plugins/) directory. Everything that is dependent on the request lifecycle will live in this folder.
 
 Since the client is dependent on the request lifecycle, it's a plugin, too! Client code lives in [/src/plugins/page/client/](./src/plugins/page/client). This is also where you will find the webpack build configuration.
@@ -18,7 +16,7 @@ Next we have [services](./src/services). Services live outside the request lifec
 2. Use services to perform the necessary computations.
 3. Serialize the response.
 
-Finally, the [dataModel](./src/dataModel) contains our persisted object models using Deepkit ORM's patterns. Each table in the databse has a corresponding class in this folder. The database object is contructed in [database.ts](./src/dataModel/database.ts).
+Finally, the [dataModel](./src/dataModel) contains our persisted object models using Deepkit ORM's patterns. Each table in the database has a corresponding class in this folder. The database object is constructed in [database.ts](./src/dataModel/database.ts).
 
 ## Stack
 Core tech is still:
@@ -29,12 +27,12 @@ Core tech is still:
 
 And some finer stack details:
 
-* [Fastify](https://www.fastify.io/) web framework for Node.js
+* [Deepkit Framework](https://deepkit.io/) application framework for Node.js and TypeScript
 * [Deepkit ORM](https://deepkit.io/library/orm)
 * Not 100%, but for now: [Fluent UI](https://developer.microsoft.com/en-us/fluentui#/)
 
 ## Current state
-Most major questions about the architechture have been answered, but some finer points remain. I am going to build some basic CRUD pages to get some mileage on this architecture before diving into story-based features.
+Most major questions about the architecture have been answered, but some finer points remain. I am going to build some basic CRUD pages to get some mileage on this architecture before diving into story-based features.
 
 ## Architecture goals
 These are not high-level goals, but rather architecture goals.
