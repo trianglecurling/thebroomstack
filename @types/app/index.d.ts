@@ -1,11 +1,3 @@
-interface PageData {
-	pageTitle: string;
-	moduleScripts: string[];
-	scripts: string[];
-	styleSheets: string[];
-	data: any;
-}
-
 declare module "app-core" {
 	import { Database } from "@deepkit/orm";
 	import { SQLiteDatabaseAdapter } from "@deepkit/sqlite";

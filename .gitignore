@@ -5,6 +5,7 @@ public/favicon.png
 
 .config
 data
+var
 
 # Logs
 logs
