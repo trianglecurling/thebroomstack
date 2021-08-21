@@ -1,11 +1,8 @@
-declare global {
-	interface Window {
-		__pageData: any;
-	}
-}
+import { usePageContext } from "../common/PageContext";
 
 export function usePageData<T>(key: string): T {
-	const result = window.__pageData[key];
+    const pageContext = usePageContext();
+	const result = pageContext.pageData[key];
 	if (!result) {
 		throw new Error(`Could not find ${key} on __pageData.`);
 	}

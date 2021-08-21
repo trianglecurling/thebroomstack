@@ -1,5 +1,13 @@
 import type { Types } from "@deepkit/type";
 
+interface IPageContext {
+	moduleScripts: string[];
+	pageTitle: string;
+	pageData: any;
+	scripts: string[];
+	styleSheets: string[];
+}
+
 interface EntityData {
 	name: string;
 	className: string;

@@ -1,15 +1,8 @@
 import { injectable } from "@deepkit/injector";
 import { HttpRequest } from "@deepkit/http";
+import { IPageContext } from "../../../@types/app/shared";
 
-interface TemplateConfig {
-	moduleScripts: string[];
-	pageTitle: string;
-	pageData: any;
-	scripts: string[];
-	styleSheets: string[];
-}
-
-function getFullTemplateConfig(partialConfig: Partial<TemplateConfig>): TemplateConfig {
+function getFullTemplateConfig(partialConfig: Partial<IPageContext>): IPageContext {
 	return {
 		moduleScripts: partialConfig.moduleScripts ?? [],
 		pageTitle: partialConfig.pageTitle ?? "The Broom Stack",
@@ -31,14 +24,13 @@ function resolveStyleSheets(styleSheets: string[]) {
 export class FrontendService {
 	constructor(protected request: HttpRequest) {}
 
-	public renderAppTemplate(_templateConfig: Partial<TemplateConfig>) {
-		const templateConfig = getFullTemplateConfig(_templateConfig);
-		const scripts = resolveScripts(templateConfig.scripts);
-		const styleSheets = resolveStyleSheets(templateConfig.styleSheets);
-		const pageData = JSON.stringify(templateConfig.pageData);
+	public renderAppTemplate(_pageContext: Partial<IPageContext>) {
+		const pageContext = getFullTemplateConfig(_pageContext);
+		const scripts = resolveScripts(pageContext.scripts);
+		const styleSheets = resolveStyleSheets(pageContext.styleSheets);
 
 		if (this.request.headers.accept?.includes("application/json")) {
-			return templateConfig;
+			return pageContext;
 		} else {
 			return (
 				<html lang="en" class="no-js">
@@ -46,7 +38,7 @@ export class FrontendService {
 						<meta charset="UTF-8" />
 						<meta name="viewport" content="width=device-width, initial-scale=1" />
 
-						<title>{templateConfig.pageTitle}</title>
+						<title>{pageContext.pageTitle}</title>
 
 						<script type="module">
 							document.documentElement.classList.remove("no-js");
@@ -73,12 +65,12 @@ export class FrontendService {
 						{/* <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
                             <link rel="manifest" href="/my.webmanifest" /> */}
 						<meta name="theme-color" content="#ffffff" />
-						{templateConfig.pageData && <script>window.__pageData = JSON.parse(`{pageData}`);</script>}
+						<script>window.__pageContext = JSON.parse(`{JSON.stringify(pageContext)}`);</script>
 					</head>
 
 					<body>
 						<div id="root"></div>
-						{templateConfig.moduleScripts.map((s) => (
+						{pageContext.moduleScripts.map((s) => (
 							<script src={s} type="module"></script>
 						))}
 						{scripts.map((s) => (
