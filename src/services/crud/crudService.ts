@@ -1,7 +1,6 @@
-import { BaseQuery, DeleteResult, FilterQuery, JoinDatabaseQuery, PatchResult, Query } from "@deepkit/orm";
-import { ClassSchema, plainToClass } from "@deepkit/type";
+import { BaseQuery, DeleteResult, FilterQuery, JoinDatabaseQuery, OrmEntity, PatchResult, Query } from "@deepkit/orm";
 import { TheBroomstackDatabase } from "../../dataModel/database";
-import { injectable } from "@deepkit/injector";
+import { cast, ReflectionClass } from "@deepkit/type";
 
 export interface OrderBy {
 	field: string;
@@ -67,7 +66,7 @@ function buildQuery<T extends BaseQuery<any>>(baseQuery: T, builderOptions: Quer
 	if (filter) {
 		try {
 			query = query.filter(filter);
-		} catch (e) {
+		} catch (e: any) {
 			throw new HttpError(400, `Error filtering query: ${e.message}.`);
 		}
 	}
@@ -87,41 +86,40 @@ function buildQuery<T extends BaseQuery<any>>(baseQuery: T, builderOptions: Quer
 	return query;
 }
 
-@injectable()
 export class CrudService {
 	constructor(protected database: TheBroomstackDatabase) {}
-	public async findOne(model: ClassSchema<any>, options: Omit<QueryOptions, "limit" | "many">) {
+	public async findOne(model: ReflectionClass<any>, options: Omit<QueryOptions, "limit" | "many">) {
 		const query = buildQuery(this.database.query(model), options);
 		return query.findOneOrUndefined();
 	}
 
-	public async find(model: ClassSchema<any>, options: QueryOptions) {
+	public async find(model: ReflectionClass<any>, options: QueryOptions) {
 		const query = buildQuery(this.database.query(model), options);
 		return query.find();
 	}
 
-	public async count(model: ClassSchema<any>, options: Omit<QueryOptions, "skip" | "limit" | "orderBy" | "many">) {
+	public async count(model: ReflectionClass<any>, options: Omit<QueryOptions, "skip" | "limit" | "orderBy" | "many">) {
 		const query = buildQuery(this.database.query(model), options);
 		return query.count();
 	}
 
-	public async has(model: ClassSchema<any>, options: Omit<QueryOptions, "skip" | "limit" | "orderBy" | "many">) {
+	public async has(model: ReflectionClass<any>, options: Omit<QueryOptions, "skip" | "limit" | "orderBy" | "many">) {
 		const query = buildQuery(this.database.query(model), options);
 		return query.has();
 	}
 
-	public async create(model: ClassSchema<any>, body: any) {
+	public async create(model: ReflectionClass<any>, body: any) {
 		// body should already be validated at this point
 		const plainRecord = { ...body };
-		delete plainRecord[model.getPrimaryFieldName()];
+		delete plainRecord[model.getPrimary().name];
 		delete plainRecord["created"];
 		delete plainRecord["modified"];
-		const record = plainToClass(model, plainRecord);
+		const record: OrmEntity = cast(plainRecord, undefined, undefined, undefined, model.type);
 		await this.database.persist(record);
 		return record;
 	}
 
-	public async delete(model: ClassSchema<any>, options: Omit<QueryOptions, "project" | "join">) {
+	public async delete(model: ReflectionClass<any>, options: Omit<QueryOptions, "project" | "join">) {
 		const query = buildQuery(this.database.query(model), options);
 		let result: DeleteResult<any>;
 		if (options.many) {
@@ -135,9 +133,9 @@ export class CrudService {
 		return result;
 	}
 
-	public async update(model: ClassSchema<any>, options: Omit<QueryOptions, "project" | "join">, body: any) {
+	public async update(model: ReflectionClass<any>, options: Omit<QueryOptions, "project" | "join">, body: any) {
 		const plainRecord = { ...body };
-        delete plainRecord[model.getPrimaryFieldName()];
+        delete plainRecord[model.getPrimary().name];
 		plainRecord["modified"] = new Date();
 		const query = buildQuery(this.database.query(model), options);
 		let result: PatchResult<any>;

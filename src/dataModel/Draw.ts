@@ -1,19 +1,19 @@
-import { entity, t } from "@deepkit/type";
+import { AutoIncrement, BackReference, entity, PrimaryKey, Reference } from "@deepkit/type";
 import { IDataObject } from "../types/data";
 import { League } from "./League";
 import { Match } from "./Match";
 
-@(entity.name("draw").collectionName("draws"))
+@(entity.name("draw").collection("draws"))
 export class Draw implements IDataObject {
-	@t.primary.autoIncrement public id: number = 0;
-	@t public created: Date = new Date();
-	@t public modified?: Date;
+	public id: number& PrimaryKey & AutoIncrement = 0;
+	public created: Date = new Date();
+	public modified?: Date;
 
-	@(t.type(() => League).reference()) public league?: League;
+	public league?: League & Reference;
 
-	@(t.array(() => Match).backReference()) public matches?: Match[];
+	public matches?: Match[] & BackReference;
 
-	// @(t.type(() => Event).reference()) public event?: Event;
+	// public event?: Event & Reference;
 
-	constructor(@t public date: Date) {}
+	constructor(public date: Date) {}
 }

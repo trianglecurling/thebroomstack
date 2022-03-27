@@ -1,7 +1,6 @@
-import { http } from "@deepkit/http";
-import { getClassSchema, t, ClassSchema } from "@deepkit/type";
+import { http, HttpBody, HttpError, HttpQueries, HttpQuery } from "@deepkit/http";
 import { ClassType } from "@deepkit/core";
-import { AppModule } from "@deepkit/app";
+import { createModule } from "@deepkit/app";
 import { TheBroomstackDatabase } from "../dataModel/database";
 
 import { User } from "../dataModel/User";
@@ -27,7 +26,8 @@ import { SpareCandidate } from "../dataModel/joinerObjects/SpareCandidate";
 import { LeagueTeam } from "../dataModel/joinerObjects/LeagueTeam";
 import { PlayerClub } from "../dataModel/joinerObjects/PlayerClub";
 
-import { JoinHierarchy, OrderBy, CrudService, QueryOptions } from "../services/crud/crudService";
+import { CrudService, JoinHierarchy, OrderBy, QueryOptions } from "../services/crud/crudService";
+import { InlineRuntimeType, ReflectionClass } from "@deepkit/type";
 
 // https://gist.github.com/marcj/4ea2a6f45888b637a6ad72cc8ab41d84
 
@@ -54,27 +54,30 @@ function buildJoinHierarchy(joinPaths: string | string[] | undefined): JoinHiera
 	return hierarchy;
 }
 
-function createController(schema: ClassSchema): ClassType {
+function createController(schema: ReflectionClass<any>): ClassType {
 	if (!schema.name) throw new Error(`Class ${schema.getClassName()} needs an entity name via @entity.name()`);
 
 	class EntityQueryOptionsBase {
-		@t.string.optional orderBy: string | undefined;
-		@t.number.optional limit: number | undefined;
-		@t.number.optional skip: number | undefined;
-		@t.string.optional filter: string | undefined;
+		orderBy?: string;
+		limit?: number;
+		skip?: number;
+		filter?: string;
 	}
 
+	//reads whatever type is in `schema` and makes it available in the runtime type system.
+	type SchemaType = InlineRuntimeType<typeof schema>;
+
 	class EntityListQueryOptions extends EntityQueryOptionsBase {
-		@t.string.optional project: string | undefined;
-		@t.string.optional join: string | undefined;
-		@(t.union(t.literal("find"), t.literal("count"), t.literal("has")).default("find")) method:
+		project?: string;
+		join?: string;
+		method:
 			| "find"
 			| "count"
 			| "has" = "find";
 	}
 
 	class EntityUpdateQueryOptions extends EntityQueryOptionsBase {
-		@t.boolean.optional many: boolean | undefined;
+		many?: boolean;
 	}
 
 	function parseOrderBy(orderBy: string | undefined): OrderBy | undefined {
@@ -83,15 +86,15 @@ function createController(schema: ClassSchema): ClassType {
 		}
 		const [field, direction] = orderBy.split("-", 2);
 		if (typeof direction === "string" && direction !== "asc" && direction !== "desc") {
-			throw new HttpError(400, "The `orderBy` param must end with '-asc' or '-desc'.");
+			throw new HttpError("The `orderBy` param must end with '-asc' or '-desc'.", 400);
 		}
 		if (!schema.hasProperty(field)) {
-			throw new HttpError(400, `The field "${field}" does not exist in the "${schema.name}" schema.`);
+			throw new HttpError(`The field "${field}" does not exist in the "${schema.name}" schema.`, 400);
 		}
 		return { field, direction: direction };
 	}
 
-	const primaryKey = schema.getPrimaryField();
+	const primaryKey = schema.getPrimary();
 
 	@http.controller("/api/v1/" + schema.name)
 	class RestController {
@@ -101,9 +104,9 @@ function createController(schema: ClassSchema): ClassType {
 		 * Gets an array of results
 		 */
 		@(http.GET("").description(`Gets a list of ${schema.name}.`))
-		async list(@http.queries() options: EntityListQueryOptions) {
+		async list(options: HttpQueries<EntityListQueryOptions>) {
 			if (options.method !== "find" && (options.skip !== undefined || options.limit !== undefined)) {
-				throw new HttpError(400, "Cannot use skip or limit with count or has methods");
+				throw new HttpError("Cannot use skip or limit with count or has methods", 400);
 			}
 
 			const queryOptions: QueryOptions = {
@@ -121,7 +124,7 @@ function createController(schema: ClassSchema): ClassType {
 			} else if (options.method === "has") {
 				return this.crudService.has(schema, queryOptions);
 			} else {
-				throw new HttpError(400, "Invalid method");
+				throw new HttpError("Invalid method", 400);
 			}
 		}
 
@@ -129,25 +132,25 @@ function createController(schema: ClassSchema): ClassType {
 		 * Gets a single result by id.
 		 */
 		@(http.GET(":id").description(`Gets a single ${schema.name} by id.`))
-		async get(@(http.query().optional) join: string | undefined, id: number) {
+		async get(join: HttpQuery<string | undefined>, id: number) {
 			const result = await this.crudService.findOne(schema, {
 				filter: { [primaryKey.name]: id },
 				join: buildJoinHierarchy(join),
 			});
 			if (!result) {
-				throw new HttpError(404, `No ${schema.name} with id ${id} found.`);
+				throw new HttpError(`No ${schema.name} with id ${id} found.`, 404);
 			} else {
 				return result;
 			}
 		}
 
 		@(http.POST("").description("Adds a new " + schema.name))
-		async post(@t.type(schema) @http.body() body: any) {
+		async post(body: HttpBody<SchemaType>) {
 			return this.crudService.create(schema, body);
 		}
 
 		@(http.DELETE("").description(`Deletes ${schema.name} records.`))
-		async delete(@http.queries() options: EntityUpdateQueryOptions) {
+		async delete(options: HttpQueries<EntityUpdateQueryOptions>) {
 			const deleteOptions = {
 				orderBy: parseOrderBy(options.orderBy),
 				limit: options.limit,
@@ -171,7 +174,7 @@ function createController(schema: ClassSchema): ClassType {
 
 		// Should be PATCH
 		@(http.PUT("").description("Updates " + schema.name))
-		async update(@t.partial(schema) @http.body() body: any, @http.queries() options: EntityUpdateQueryOptions) {
+		async update(body: HttpBody<Partial<SchemaType>>, options: HttpQueries<EntityUpdateQueryOptions>) {
 			const patchOptions = {
 				orderBy: parseOrderBy(options.orderBy),
 				limit: options.limit,
@@ -185,7 +188,7 @@ function createController(schema: ClassSchema): ClassType {
 
 		// Should be PATCH
 		@(http.PUT(":id").description("Updates " + schema.name))
-		async updateOne(id: number, @t.partial(schema) @http.body() body: any) {
+		async updateOne(id: number, body: HttpBody<Partial<SchemaType>>) {
 			const patchOptions = {
 				filter: { [primaryKey.name]: id },
 				many: false,
@@ -200,7 +203,7 @@ function createController(schema: ClassSchema): ClassType {
 	return RestController;
 }
 
-const schemas = [
+const schemas: ClassType[] = [
 	User,
 	Address,
 	EmergencyContact,
@@ -223,12 +226,9 @@ const schemas = [
 	LeagueTeam,
 	PlayerClub,
 ];
-const controllers = schemas.map(getClassSchema).map(createController);
+const controllers = schemas.map(v => ReflectionClass.from(v)).map(createController);
 
-export const CrudModule = new AppModule(
-	{
-		controllers: controllers,
-		providers: [CrudService],
-	},
-	"crud"
-);
+export class CrudModule extends createModule({
+	controllers: controllers,
+	providers: [CrudService],
+}, 'crud') {}

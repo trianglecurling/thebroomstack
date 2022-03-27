@@ -1,4 +1,4 @@
-import { entity, t } from "@deepkit/type";
+import { AutoIncrement, BackReference, entity, PrimaryKey, Reference } from "@deepkit/type";
 import { IDataObject } from "../types/data";
 import { User } from "./User";
 import { Team } from "./Team";
@@ -10,30 +10,28 @@ import { LeagueFormat } from "./LeagueFormat";
 import { LeagueMembership } from "./joinerObjects/LeagueMembership";
 import { LeagueTeam } from "./joinerObjects/LeagueTeam";
 
-@(entity.name("league").collectionName("leagues"))
+@(entity.name("league").collection("leagues"))
 export class League implements IDataObject {
-	@t.primary.autoIncrement public id: number = 0;
-	@t public created: Date = new Date();
-	@t public modified?: Date;
+	public id: number & PrimaryKey & AutoIncrement = 0;
+	public created: Date = new Date();
+	public modified?: Date;
 
-	@t public singleLeagueCost?: number;
-	@t public additionalLeagueCost?: number;
+	public singleLeagueCost?: number;
+	public additionalLeagueCost?: number;
 
-	@(t.array(() => User).backReference({ via: () => LeagueMembership }))
-	Users?: User[];
+	Users?: User[] & BackReference<{via: LeagueMembership}>;
 
-	@(t.array(() => Team).backReference({ via: () => LeagueTeam }))
-	teams?: Team[];
+	teams?: Team[] & BackReference<{via: LeagueTeam}>;
 
-	@(t.type(() => LeagueFormat).reference()) public format?: LeagueFormat;
+	public format?: LeagueFormat & Reference;
 
-	@(t.array(() => Draw).backReference()) public draws?: Draw[];
+	public draws?: Draw[] & BackReference;
 
-	@(t.array(() => DrawTime).backReference()) public drawTimes?: DrawTime[];
+	public drawTimes?: DrawTime[] & BackReference;
 
-	@(t.array(() => Division).backReference()) public divisions?: Division[];
+	public divisions?: Division[] & BackReference;
 
-	@(t.type(() => Season).reference()) public season?: Season;
+	public season?: Season & Reference;
 
-	constructor(@t public name: string, @t public dayOfWeek: number, @t public teamCapacity: number) {}
+	constructor(public name: string, public dayOfWeek: number, public teamCapacity: number) {}
 }

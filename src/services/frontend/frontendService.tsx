@@ -1,6 +1,5 @@
-import { injectable } from "@deepkit/injector";
 import { HttpRequest } from "@deepkit/http";
-import { IPageContext } from "../../../@types/app/shared";
+import { IPageContext } from "../../types/shared";
 
 function getFullTemplateConfig(partialConfig: Partial<IPageContext>): IPageContext {
 	return {
@@ -20,7 +19,6 @@ function resolveStyleSheets(styleSheets: string[]) {
 	return styleSheets.map((ss) => `/public/css/${ss}`);
 }
 
-@injectable()
 export class FrontendService {
 	constructor(protected request: HttpRequest) {}
 

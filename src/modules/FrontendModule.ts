@@ -1,4 +1,4 @@
-import { AppModule } from "@deepkit/app";
+import { createModule } from "@deepkit/app";
 import { FrontendService } from "../services/frontend/frontendService";
 import { httpMiddleware } from "@deepkit/http";
 import { serveStaticListener } from "@deepkit/http";
@@ -15,17 +15,20 @@ const webpackConfig = require("../client/webpack.config.js");
 const { publicPath } = webpackConfig.output;
 const compiler = webpack(webpackConfig);
 
-const publicDir = path.resolve(__dirname, "..", "..", "public");
-const servePublic = serveStaticListener("/public", publicDir);
-export const FrontendModule = new AppModule(
-	{
-		controllers: [FrontendController, CrudController],
-		providers: [{ provide: FrontendService, scope: "http" }, EntitiesService, CrudService],
-		listeners: [servePublic],
-		middlewares: [
-			httpMiddleware.for(webpackDevMiddleware(compiler, { publicPath: publicPath.Path, writeToDisk: true })),
-			httpMiddleware.for(webpackHotMiddleware(compiler)),
-		],
-	},
-	"frontend"
-);
+export class FrontendModule extends createModule({
+	controllers: [FrontendController, CrudController],
+	providers: [{ provide: FrontendService, scope: "http" }, EntitiesService, CrudService],
+	listeners: [],
+	middlewares: [
+		httpMiddleware.for(webpackDevMiddleware(compiler, { publicPath: publicPath.Path, writeToDisk: true })),
+		httpMiddleware.for(webpackHotMiddleware(compiler)),
+	],
+}, 'frontend') {
+
+	constructor() {
+		super();
+
+		const publicDir = path.resolve(__dirname, "..", "..", "public");
+		this.addListener(serveStaticListener(this, '/public', publicDir));
+	}
+}

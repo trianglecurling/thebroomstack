@@ -1,9 +1,8 @@
-import { Router } from "@reach/router";
 import { RouteComponentProps } from "@reach/router";
-import { EntityData, PluralizationMap } from "../../../../@types/app/shared";
 import { usePageData } from "../hooks/usePageData";
 import { CrudAssociations } from "./CrudAssociations";
 import { CrudList } from "./CrudList";
+import { EntityData, PluralizationMap } from "../../../types/shared";
 
 export const CrudIndex: React.FC<RouteComponentProps> = () => {
 	const entity = usePageData<EntityData>("entity");

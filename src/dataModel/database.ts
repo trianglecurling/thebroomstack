@@ -25,17 +25,12 @@ import { LeagueTeam } from "./joinerObjects/LeagueTeam";
 import { PlayerClub } from "./joinerObjects/PlayerClub";
 import { AppConfig } from "../appConfig";
 
-import { injectable } from "@deepkit/injector";
-
 import path from "path";
 
-class DatabaseSettings extends AppConfig.slice(["dbPath"]) {}
-
-@injectable()
 export class TheBroomstackDatabase extends Database {
 	name = "default";
-	constructor(protected settings: DatabaseSettings) {
-		super(new SQLiteDatabaseAdapter(path.resolve(__dirname, "..", "..", settings.dbPath)), [
+	constructor(dbPath: AppConfig['dbPath']) {
+		super(new SQLiteDatabaseAdapter(path.resolve(__dirname, "..", "..", dbPath)), [
 			// Data objects
 			User,
 			Address,

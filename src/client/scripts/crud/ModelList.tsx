@@ -1,9 +1,9 @@
-import { Entities, PluralizationMap } from "../../../../@types/app/shared";
 import { usePageData } from "../hooks/usePageData";
 import { useNavigate } from "@reach/router";
 import { Nav, INavLinkGroup, INavLink } from "@fluentui/react/lib/Nav";
 import React from "react";
 import { useCallback } from "react";
+import { Entities, PluralizationMap } from "../../../types/shared";
 
 export const ModelList: React.FC<{}> = () => {
 	const entities = usePageData<Entities>("entities");

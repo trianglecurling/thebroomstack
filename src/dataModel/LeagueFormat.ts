@@ -1,11 +1,11 @@
-import { entity, t } from "@deepkit/type";
+import { AutoIncrement, entity, PrimaryKey } from "@deepkit/type";
 import { IDataObject } from "../types/data";
 
-@(entity.name("leagueFormat").collectionName("leagueFormats"))
+@(entity.name("leagueFormat").collection("leagueFormats"))
 export class LeagueFormat implements IDataObject {
-	@t.primary.autoIncrement public id: number = 0;
-	@t public created: Date = new Date();
-	@t public modified?: Date;
+	public id: number & PrimaryKey & AutoIncrement = 0;
+	public created: Date = new Date();
+	public modified?: Date;
 
-	constructor(@t public format: string, @t public playersPerTeam: number) {}
+	constructor(public format: string, public playersPerTeam: number) {}
 }

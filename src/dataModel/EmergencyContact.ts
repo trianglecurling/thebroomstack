@@ -1,14 +1,14 @@
-import { entity, t } from "@deepkit/type";
+import { AutoIncrement, BackReference, entity, PrimaryKey } from "@deepkit/type";
 import { User } from "./User";
 import { IDataObject } from "../types/data";
 
-@(entity.name("emergencyContact").collectionName("emergencyContacts"))
+@(entity.name("emergencyContact").collection("emergencyContacts"))
 export class EmergencyContact implements IDataObject {
-	@t.primary.autoIncrement public id: number = 0;
-	@t public created: Date = new Date();
-	@t public modified?: Date;
+	public id: number & PrimaryKey & AutoIncrement = 0;
+	public created: Date = new Date();
+	public modified?: Date;
 
-	@t.backReference() public user?: User;
+	public user?: User & BackReference;
 
-	constructor(@t public name: string, @t public phone: string, @t public relationship: string) {}
+	constructor(public name: string, public phone: string, public relationship: string) {}
 }

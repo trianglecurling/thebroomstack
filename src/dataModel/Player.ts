@@ -1,21 +1,20 @@
-import { entity, t } from "@deepkit/type";
+import { AutoIncrement, BackReference, entity, PrimaryKey, Reference } from "@deepkit/type";
 import { IDataObject } from "../types/data";
 import { Club } from "./Club";
 import { User } from "./User";
 import { PlayerClub } from "./joinerObjects/PlayerClub";
 
-@(entity.name("player").collectionName("players"))
+@(entity.name("player").collection("players"))
 export class Player implements IDataObject {
-	@t.primary.autoIncrement public id: number = 0;
-	@t public created: Date = new Date();
-	@t public modified?: Date;
+	public id: number & PrimaryKey & AutoIncrement = 0;
+	public created: Date = new Date();
+	public modified?: Date;
 
-	@t public name?: string;
+	public name?: string;
 
-	@(t.type(() => User).reference()) public user?: User;
+	public user?: User & Reference;
 
-	@(t.array(() => Club).backReference({ via: () => PlayerClub }))
-	clubs?: Club[];
+	clubs?: Club[] & BackReference<{via: PlayerClub}>;
 
 	constructor() {}
 }
