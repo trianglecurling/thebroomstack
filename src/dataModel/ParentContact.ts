@@ -1,16 +1,15 @@
-import { entity, t } from "@deepkit/type";
+import { AutoIncrement, BackReference, entity, PrimaryKey } from "@deepkit/type";
 import { User } from "./User";
 import { IDataObject } from "../types/data";
 import { UserParentContact } from "./joinerObjects/UserParentContact";
 
-@(entity.name("parentContact").collectionName("parentContacts"))
+@(entity.name("parentContact").collection("parentContacts"))
 export class ParentContact implements IDataObject {
-	@t.primary.autoIncrement public id: number = 0;
-	@t public created: Date = new Date();
-	@t public modified?: Date;
+	public id: number & PrimaryKey & AutoIncrement = 0;
+	public created: Date = new Date();
+	public modified?: Date;
 
-	@(t.array(() => User).backReference({ via: () => UserParentContact }))
-	users?: User[];
+	users?: User[] & BackReference<{via: UserParentContact}>;
 
-	constructor(@t public name: string, @t public phone: string, @t public email: string) {}
+	constructor(public name: string, public phone: string, public email: string) {}
 }

@@ -1,9 +1,8 @@
 import { globalHistory } from "@reach/router";
 import React, { createContext, useContext, useEffect } from "react";
-import { IPageContext } from "../../../../@types/app/shared";
-import { useForceUpdate } from "../hooks/useForceUpdate";
 import { useQuery, useQueryClient } from "react-query";
 import { getPageContext } from "../api/pageContext";
+import { IPageContext } from "../../../types/shared";
 
 declare global {
 	interface Window {

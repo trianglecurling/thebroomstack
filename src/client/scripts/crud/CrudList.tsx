@@ -1,7 +1,7 @@
 import { DetailsList, DetailsListLayoutMode, IColumn, SelectionMode } from "@fluentui/react";
-import { EntityData, PluralizationMap } from "../../../../@types/app/shared";
 import { usePageData } from "../hooks/usePageData";
 import { Link } from "../common/Link";
+import { EntityData, PluralizationMap } from "../../../types/shared";
 
 export const CrudList: React.FC<{}> = () => {
 	const entity = usePageData<EntityData>("entity");

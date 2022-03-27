@@ -1,8 +1,8 @@
 import { DetailsList, mergeStyles, SelectionMode } from "@fluentui/react";
 import { useMemo } from "react";
-import { EntityData, PluralizationMap } from "../../../../@types/app/shared";
 import { Link } from "../common/Link";
 import { usePageData } from "../hooks/usePageData";
+import { EntityData, PluralizationMap } from "../../../types/shared";
 
 export const CrudAssociations: React.FC<{}> = () => {
     const entity = usePageData<EntityData>("entity");

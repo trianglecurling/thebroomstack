@@ -1,6 +1,6 @@
-import { AppModule } from "@deepkit/app";
+import { createModule } from "@deepkit/app";
 import { EntitiesService } from "../services/entities/entitiesService";
-import { http } from "@deepkit/http"
+import { http } from "@deepkit/http";
 
 @http.controller("/meta/entities")
 export class EntitiesController {
@@ -17,10 +17,7 @@ export class EntitiesController {
     }
 }
 
-export const MetaModule = new AppModule(
-	{
-		controllers: [EntitiesController],
-		providers: [EntitiesService],
-	},
-	"meta"
-);
+export class MetaModule extends createModule({
+	controllers: [EntitiesController],
+	providers: [EntitiesService]
+}, 'meta') {}

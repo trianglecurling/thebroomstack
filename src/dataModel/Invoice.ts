@@ -1,21 +1,21 @@
-import { entity, t } from "@deepkit/type";
+import { AutoIncrement, entity, PrimaryKey, Reference } from "@deepkit/type";
 import { IDataObject } from "../types/data";
 import { User } from "./User";
 
-@(entity.name("invoice").collectionName("invoices"))
+@(entity.name("invoice").collection("invoices"))
 export class Invoice implements IDataObject {
-	@t.primary.autoIncrement public id: number = 0;
-	@t public created: Date = new Date();
-	@t public modified?: Date;
+	public id: number & PrimaryKey & AutoIncrement = 0;
+	public created: Date = new Date();
+	public modified?: Date;
 
-	@t public payPalInvoiceId?: string;
+	public payPalInvoiceId?: string;
 
-	@(t.type(() => User).reference()) public user?: User;
+	public user?: User & Reference;
 
 	constructor(
-		@t public invoiceNum: number,
-		@t public dueDate: Date,
-		@t public invoiceAmount: number,
-		@t public amountPaid: number
+		public invoiceNum: number,
+		public dueDate: Date,
+		public invoiceAmount: number,
+		public amountPaid: number
 	) {}
 }

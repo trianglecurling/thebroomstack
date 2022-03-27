@@ -1,4 +1,4 @@
-import { entity, t } from "@deepkit/type";
+import { AutoIncrement, BackReference, entity, PrimaryKey, Reference } from "@deepkit/type";
 import { EmergencyContact } from "./EmergencyContact";
 import { IDataObject } from "../types/data";
 import { Address } from "./Address";
@@ -10,39 +10,35 @@ import { LeagueMembership } from "./joinerObjects/LeagueMembership";
 import { UserParentContact } from "./joinerObjects/UserParentContact";
 import { SpareCandidate } from "./joinerObjects/SpareCandidate";
 
-@(entity.name("user").collectionName("users"))
+@(entity.name("user").collection("users"))
 export class User implements IDataObject {
-	@t.primary.autoIncrement public id: number = 0;
-	@t public created: Date = new Date();
-	@t public modified?: Date;
+	public id: number & PrimaryKey & AutoIncrement = 0;
+	public created: Date = new Date();
+	public modified?: Date;
 
-	@t public gender?: string;
-	@t public occupation?: string;
-	@t public school?: string;
-	@t public ccmUserName?: string;
+	public gender?: string;
+	public occupation?: string;
+	public school?: string;
+	public ccmUserName?: string;
 
-	@(t.array(() => Invoice).backReference()) public invoices?: Invoice[];
-	@(t.type(() => Address).reference()) public address?: Address;
+	public invoices?: Invoice[] & BackReference;
+	public address?: Address & Reference;
 
-	@(t.type(() => EmergencyContact).reference())
-	public emergencyContact?: EmergencyContact;
+	public emergencyContact?: EmergencyContact & Reference;
 
-	@(t.array(() => ParentContact).backReference({ via: () => UserParentContact }))
-	parentContacts?: ParentContact[];
+	parentContacts?: ParentContact[] & BackReference<{via: UserParentContact}>;
 
-	@(t.array(() => League).backReference({ via: () => LeagueMembership }))
-	leagues?: League[];
+	leagues?: League[] & BackReference<{via: LeagueMembership}>;
 
-	@(t.array(() => DrawTime).backReference({ via: () => SpareCandidate }))
-	spareAvailability?: DrawTime[];
+	spareAvailability?: DrawTime[] & BackReference<{via: SpareCandidate}>;
 
 	constructor(
-		@t public fullName: string,
-		@t public friendlyName: string,
-		@t public email: string,
-		@t public memberSince: Date,
-		@t public curledSince: Date,
-		@t public dateOfBirth: Date,
-		@t public phone: string
+		public fullName: string,
+		public friendlyName: string,
+		public email: string,
+		public memberSince: Date,
+		public curledSince: Date,
+		public dateOfBirth: Date,
+		public phone: string
 	) {}
 }

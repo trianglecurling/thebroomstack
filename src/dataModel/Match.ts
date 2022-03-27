@@ -1,4 +1,4 @@
-import { entity, t } from "@deepkit/type";
+import { AutoIncrement, entity, PrimaryKey, Reference } from "@deepkit/type";
 import { IDataObject } from "../types/data";
 import { Draw } from "./Draw";
 import { Sheet } from "./Sheet";
@@ -33,20 +33,20 @@ export interface GameState {
 	complete: boolean;
 }
 
-@(entity.name("match").collectionName("matches"))
+@(entity.name("match").collection("matches"))
 export class Match implements IDataObject {
-	@t.primary.autoIncrement public id: number = 0;
-	@t public created: Date = new Date();
-	@t public modified?: Date;
+	public id: number & PrimaryKey & AutoIncrement = 0;
+	public created: Date = new Date();
+	public modified?: Date;
 
-	@t public state?: string;
+	public state?: string;
 
-	@(t.type(() => Draw).reference()) public draw?: Draw;
-	@(t.type(() => Sheet).reference()) public sheet?: Sheet;
-	@(t.type(() => Team).reference()) public team1?: Team;
-	@(t.type(() => Team).reference()) public team2?: Team;
+	public draw?: Draw & Reference;
+	public sheet?: Sheet & Reference;
+	public team1?: Team & Reference;
+	public team2?: Team & Reference;
 
-	constructor(@t public date: Date) {}
+	constructor(public date: Date) {}
 
 	public getState(): GameState {
 		return this.state && JSON.parse(this.state);
